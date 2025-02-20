@@ -1,0 +1,28 @@
+[workspace]
+members = ["macros"]
+
+[package]
+name = "evergreen_utility_ai"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+evergreen_utility_ai_macros = { path = "macros" }
+bevy_ecs = { version = "0.15", default-features = false, features = ["bevy_reflect"] }
+bevy_hierarchy = "0.15.2"
+bevy_math = "0.15.2"
+bevy_tasks = "0.15.2"
+bevy_time = { version = "0.15" }
+parking_lot = "0.12.3"
+petgraph = "0.7.1"
+smallvec = "1.13.2"
+variadics_please = "1.1.0"
+thiserror = "2.0"
+tracing = "0.1.41"
+
+[dev-dependencies]
+criterion = "0.5.1"
+
+[[bench]]
+name = "score"
+harness = false
