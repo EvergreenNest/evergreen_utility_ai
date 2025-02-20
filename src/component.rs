@@ -24,9 +24,9 @@ use crate::{
 /// [`EntityCommandsFlowExt::run_flow`]: crate::command::EntityCommandsFlowExt::run_flow
 #[derive(Component)]
 #[require(ComputedScores)]
-pub struct ScoreFlow(pub InternedFlowLabel);
+pub struct EntityFlow(pub InternedFlowLabel);
 
-impl ScoreFlow {
+impl EntityFlow {
     /// Create a new [`EntityFlow`] with the given [`FlowLabel`].
     pub fn new(label: impl FlowLabel) -> Self {
         Self(label.intern())

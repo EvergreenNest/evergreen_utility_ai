@@ -10,16 +10,16 @@
 //!   This is architected in a similar fashion to bevy schedules.
 //! - [`Selector`]: Selects an action based on the computed scores from a previously run flow.
 //!
-//! Add [`Evaluator`]s and [`Aggregator`]s to [`Flow`]s, then run the flow to
+//! Add evaluators and aggregators to flows, then run the flow to
 //! get scores.
 //!
 //! ## [`Flow`] vs [`Schedule`]
 //!
 //! Flows are similar to bevy schedules, however there are a few key differences:
-//! - Rather than storing [`System`]s, flows store [`Aggregator`]s and
-//!   [`Evaluator`]s (which themselves *can* be systems).
-//! - There are no [`SystemSet`]s.
-//! - All world access in [`Aggregator`]s and [`Evaluator`]s is read-only. This
+//! - Rather than storing systems, flows store aggregators and
+//!   evaluators (which themselves *can be* systems).
+//! - There are no system sets.
+//! - All world access in aggregators and evaluators is read-only. This
 //!   helps enforce idempotency within the scoring phase.
 //! - There is no [`ApplyDeferred`] system that run between and after all systems.
 //!   Because all world access is read-only, no commands can be queued.
@@ -31,7 +31,6 @@
 //! [`Selector`]: crate::selector::Selector
 //! [`Schedule`]: bevy_ecs::schedule::Schedule
 //! [`System`]: bevy_ecs::system::System
-//! [`SystemSet`]: bevy_ecs::schedule::SystemSet
 //! [`ApplyDeferred`]: bevy_ecs::schedule::apply_deferred
 
 pub mod aggregator;

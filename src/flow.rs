@@ -20,7 +20,8 @@ pub struct Flows {
 }
 
 impl Flows {
-    /// Returns an [`Entry`] reference to the [`Flow`] with the given label.
+    /// Returns a reference to the [`Flow`] with the given label, creating it if
+    /// it doesn't exist.
     pub fn entry(&mut self, label: impl FlowLabel) -> &mut Flow {
         self.inner
             .entry(label.intern())
@@ -266,16 +267,16 @@ enum NodeId {
     Aggregator(usize),
 }
 
-/// Configuration for a [`FlowNode`].
+/// Configuration for a flow node.
 pub struct FlowNodeConfig {
-    /// The [`FlowNode`] to register.
+    /// The node to register.
     node: FlowNode,
-    /// The [`ScoreLabel`] to associate with this [`FlowNode`], if any.
+    /// The [`ScoreLabel`] to associate with this node, if any.
     label: Option<InternedScoreLabel>,
 }
 
 impl FlowNodeConfig {
-    /// Constructs a new [`FlowNode`] with the given [`Aggregator`] and children.
+    /// Constructs a new config with the given [`Aggregator`] and children.
     pub fn aggregator<MC, MN>(
         aggregator: impl IntoAggregator<MC>,
         children: impl IntoFlowNodeConfigs<MN>,
@@ -289,7 +290,7 @@ impl FlowNodeConfig {
         }
     }
 
-    /// Constructs a new [`FlowNode`] with the given [`Evaluator`].
+    /// Constructs a new config with the given [`Evaluator`].
     pub fn evaluator<M>(evaluator: impl IntoEvaluator<M>) -> Self {
         Self {
             node: FlowNode::Evaluator {

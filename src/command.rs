@@ -6,7 +6,7 @@ use bevy_ecs::{
 };
 
 use crate::{
-    component::ScoreFlow,
+    component::EntityFlow,
     flow::WorldFlowExt,
     label::{FlowLabel, InternedFlowLabel},
 };
@@ -16,7 +16,7 @@ use crate::{
 /// [`System`]: bevy_ecs::system::System
 pub fn run_entity_flows(
     world: &mut World,
-    query: &mut QueryState<(Entity, &ScoreFlow)>,
+    query: &mut QueryState<(Entity, &EntityFlow)>,
     mut entity_flows: Local<Vec<(Entity, InternedFlowLabel)>>,
 ) {
     entity_flows.clear();
@@ -74,7 +74,7 @@ pub struct RunEntityFlow;
 
 impl EntityCommand for RunEntityFlow {
     fn apply(self, entity: Entity, world: &mut World) {
-        let Some(flow) = world.get::<ScoreFlow>(entity) else {
+        let Some(flow) = world.get::<EntityFlow>(entity) else {
             tracing::error!("Entity {entity} does not have an associated flow");
             return;
         };
