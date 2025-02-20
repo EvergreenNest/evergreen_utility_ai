@@ -10,6 +10,7 @@ use crate::{
     score::Score,
 };
 
+/// An [`Evaluator`] that calls a [`ReadOnlySystem`] to evaluate scores.
 pub struct SystemEvaluator<S> {
     system: S,
 }

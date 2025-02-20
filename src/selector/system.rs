@@ -10,6 +10,7 @@ use crate::{
     selector::{IntoSelector, Selection, SelectionCtx, Selector},
 };
 
+/// A [`Selector`] that calls a [`ReadOnlySystem`] to select actions.
 pub struct SystemSelector<S> {
     system: S,
 }

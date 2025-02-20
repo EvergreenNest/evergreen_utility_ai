@@ -1,3 +1,6 @@
+//! Provides the [`Aggregator`] trait for aggregating scores from children
+//! entities into a single score.
+
 use std::{borrow::Cow, marker::PhantomData};
 
 use bevy_ecs::{component::Component, entity::Entity, system::SystemInput, world::World};

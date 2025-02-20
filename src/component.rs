@@ -1,3 +1,6 @@
+//! Provides components for associating entities with flows, actions, and
+//! storing their computed scores.
+
 use std::{collections::HashMap, sync::Arc};
 
 use bevy_ecs::{
@@ -72,6 +75,8 @@ impl ComputedScores {
     }
 }
 
+/// A [`Component`] that associates an entity with a set of actions keyed by
+/// labeled scores.
 #[derive(Component)]
 pub struct Actions {
     /// The actions to pick when the associated score is selected.

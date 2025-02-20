@@ -33,6 +33,8 @@
 //! [`System`]: bevy_ecs::system::System
 //! [`ApplyDeferred`]: bevy_ecs::schedule::apply_deferred
 
+#![warn(missing_docs)]
+
 pub mod aggregator;
 pub mod command;
 pub mod component;

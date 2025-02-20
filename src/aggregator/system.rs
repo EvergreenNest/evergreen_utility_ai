@@ -10,6 +10,7 @@ use crate::{
     score::Score,
 };
 
+/// An [`Aggregator`] that calls a [`ReadOnlySystem`] to aggregate scores.
 pub struct SystemAggregator<S> {
     system: S,
 }

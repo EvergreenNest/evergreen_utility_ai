@@ -1,3 +1,6 @@
+//! Provides the [`Flow`] type for defining a collection of [`Aggregator`] and
+//! [`Evaluator`] nodes and running them in topological order.
+
 use std::{borrow::Cow, collections::HashMap, hash::Hash};
 
 use bevy_ecs::{entity::Entity, system::Resource, world::World};
@@ -14,6 +17,8 @@ use crate::{
     score::Score,
 };
 
+/// [`Resource`] that stores [`Flow`]s mapped to [`FlowLabel`]s, excluding the
+/// current running [`Flow`].
 #[derive(Resource, Default)]
 pub struct Flows {
     inner: HashMap<InternedFlowLabel, Flow>,
@@ -49,6 +54,8 @@ impl Flows {
     }
 }
 
+/// A collection of [`Aggregator`] and [`Evaluator`] nodes, and the metadata
+/// needed to run them in topological order.
 pub struct Flow {
     label: InternedFlowLabel,
     graph: FlowGraph,
@@ -63,6 +70,7 @@ impl Flow {
         }
     }
 
+    /// Add a collection of nodes to the flow.
     pub fn add_nodes<M>(&mut self, nodes: impl IntoFlowNodeConfigs<M>) -> &mut Self {
         self.add_nodes_with_parent(None, nodes);
         self
@@ -119,11 +127,18 @@ impl Flow {
         }
     }
 
+    /// Initializes the flow if necessary and runs it, returning the scores of
+    /// all labeled nodes.
     pub fn run(&mut self, world: &mut World, target: Entity) -> HashMap<InternedScoreLabel, Score> {
         self.initialize(world);
         self.run_readonly(world, target)
     }
 
+    /// Runs the flow, returning the scores of all labeled nodes.
+    ///
+    /// # Panics
+    ///
+    /// If the flow was not initialized before running.
     pub fn run_readonly(
         &mut self,
         world: &World,
@@ -186,11 +201,13 @@ impl Flow {
         labeled_scores
     }
 
+    /// Initializes all evaluators and aggregators in the flow.
     pub fn initialize(&mut self, world: &mut World) {
         self.graph.initialize(world);
     }
 }
 
+/// Stores all nodes in a flow graph and their dependency metadata.
 #[derive(Default)]
 pub struct FlowGraph {
     /// All evaluator nodes in the [`Flow`]. Any [`NodeId::Evaluator`] value
@@ -212,6 +229,7 @@ pub struct FlowGraph {
 }
 
 impl FlowGraph {
+    /// Initializes all evaluators and aggregators in the flow.
     pub fn initialize(&mut self, world: &mut World) {
         for id in self.uninitialized.drain(..) {
             match id {
@@ -341,9 +359,13 @@ impl FlowNode {
     }
 }
 
+/// Trait for types that can be converted into a [`FlowNodeConfig`].
 pub trait IntoFlowNodeConfig<Marker> {
+    /// Converts this value into a [`FlowNodeConfig`].
     fn into_config(self) -> FlowNodeConfig;
 
+    /// Returns a [`FlowNodeConfig`] for an [`Aggregator`] that computes the
+    /// difference of this value and the other.
     fn difference<M>(self, other: impl IntoFlowNodeConfig<M>) -> FlowNodeConfig
     where
         Self: Sized,
@@ -373,9 +395,12 @@ where
     }
 }
 
+/// A collection of [`FlowNodeConfig`]s.
 pub struct FlowNodeConfigs(Vec<FlowNodeConfig>);
 
+/// Trait for types that can be converted into a [`FlowNodeConfigs`].
 pub trait IntoFlowNodeConfigs<Marker> {
+    /// Converts this value into a [`FlowNodeConfigs`].
     fn into_configs(self) -> FlowNodeConfigs;
 }
 
@@ -423,13 +448,24 @@ macro_rules! impl_score_system_collection {
 
 all_tuples_with_size!(impl_score_system_collection, 1, 20, P, S);
 
+/// [`World`] extension trait for working with [`Flow`]s.
 pub trait WorldFlowExt {
+    /// Adds a collection of nodes to the flow with the given label.
+    ///
+    /// If the flow does not exist, it will be created.
     fn add_nodes<M>(
         &mut self,
         label: impl FlowLabel,
         nodes: impl IntoFlowNodeConfigs<M>,
     ) -> &mut Self;
 
+    /// Tries to run the flow with the given label, returning the scores of all
+    /// labeled nodes.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`TryRunFlowError`] if the flow with the given label does not
+    /// exist.
     fn try_run_flow(
         &mut self,
         label: impl FlowLabel,
@@ -438,6 +474,12 @@ pub trait WorldFlowExt {
         self.try_flow_scope(label, |world, flow| flow.run(world, target))
     }
 
+    /// Runs the flow with the given label, returning the scores of all labeled
+    /// nodes.
+    ///
+    /// # Panics
+    ///
+    /// If the flow does not exist.
     #[must_use]
     fn run_flow(
         &mut self,
@@ -447,12 +489,25 @@ pub trait WorldFlowExt {
         self.flow_scope(label, |world, flow| flow.run(world, target))
     }
 
+    /// Pulls the flow with the given label out of the [`Flows`] resource,
+    /// provides it to the closure, and then re-inserts it into the resource.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`TryRunFlowError`] if the flow with the given label does not
+    /// exist.
     fn try_flow_scope<R>(
         &mut self,
         label: impl FlowLabel,
         f: impl FnOnce(&mut World, &mut Flow) -> R,
     ) -> Result<R, TryRunFlowError>;
 
+    /// Pulls the flow with the given label out of the [`Flows`] resource,
+    /// provides it to the closure, and then re-inserts it into the resource.
+    ///
+    /// # Panics
+    ///
+    /// If the flow with the given label does not exist.
     fn flow_scope<R>(
         &mut self,
         label: impl FlowLabel,
@@ -497,6 +552,7 @@ impl WorldFlowExt for World {
     }
 }
 
+/// Error type returned when trying to run a flow that does not exist.
 #[derive(Error, Debug)]
 #[error("The flow with the label {0:?} was not found.")]
 pub struct TryRunFlowError(pub InternedFlowLabel);

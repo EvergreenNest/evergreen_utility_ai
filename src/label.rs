@@ -1,3 +1,5 @@
+//! Labels for identifying named output scores, flows, and actions.
+
 use bevy_ecs::{define_label, intern::Interned};
 
 pub use bevy_ecs::label::DynEq;

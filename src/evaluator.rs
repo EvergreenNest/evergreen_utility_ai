@@ -1,3 +1,6 @@
+//! Provides the [`Evaluator`] trait for evaluating target [`Entity`]s in a
+//! [`World`].
+
 use std::borrow::Cow;
 
 use bevy_ecs::{entity::Entity, system::SystemInput, world::World};

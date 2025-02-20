@@ -1,3 +1,5 @@
+//! Provides the [`Selector`] trait for selecting actions based on computed scores.
+
 use std::borrow::Cow;
 
 use bevy_ecs::{entity::Entity, system::SystemInput, world::World};
@@ -54,6 +56,7 @@ pub struct SelectionCtx<'w, 's> {
     pub selection: Selection<'s>,
 }
 
+/// [`SystemInput`] type for [`Selector`] systems.
 pub struct Selection<'s> {
     /// The entity that is being selected for.
     pub target: Entity,

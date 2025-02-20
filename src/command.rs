@@ -1,3 +1,7 @@
+//! Provides commands for running [`Flow`]s associated with entities.
+//!
+//! [`Flow`]: crate::flow::Flow
+
 use bevy_ecs::{
     entity::Entity,
     query::QueryState,

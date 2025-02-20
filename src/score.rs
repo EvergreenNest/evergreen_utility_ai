@@ -1,3 +1,6 @@
+//! Provides the [`Score`] type for representing a score value in the range `[0, 1]`,
+//! and the [`Scoreable`] trait for converting values into scores.
+
 use std::{
     cmp::Ordering,
     fmt,
