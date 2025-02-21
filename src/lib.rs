@@ -50,10 +50,10 @@ pub use evergreen_utility_ai_macros as macros;
 #[cfg(test)]
 mod tests {
 
+    use bevy::time::Time;
     use bevy_ecs::{component::Component, world::World};
     use bevy_hierarchy::BuildChildren;
     use bevy_math::{curve::FunctionCurve, ops::powf};
-    use bevy_time::Time;
 
     use crate::{
         self as evergreen_utility_ai,
