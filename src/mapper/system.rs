@@ -7,7 +7,7 @@ use bevy_ecs::{
 
 use crate::mapper::{IntoMapper, Mapper, Mapping, MappingCtx};
 
-/// A [`Mapper`] that calls a [`ReadOnlySystem`] to map values.
+#[doc(hidden)]
 pub struct SystemMapper<S> {
     system: S,
 }
