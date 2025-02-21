@@ -1,5 +1,6 @@
-use bevy_macro_utils::{derive_label, BevyManifest};
+use bevy_macro_utils::derive_label;
 use proc_macro::TokenStream;
+use proc_macro2::Span;
 use quote::format_ident;
 use syn::{parse_macro_input, DeriveInput};
 
@@ -39,5 +40,5 @@ pub fn derive_action_label(input: TokenStream) -> TokenStream {
 }
 
 fn evergreen_utility_ai_path() -> syn::Path {
-    BevyManifest::default().get_path("evergreen_utility_ai")
+    syn::Path::from(syn::Ident::new("evergreen_utility_ai", Span::call_site()))
 }
