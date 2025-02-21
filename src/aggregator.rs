@@ -16,7 +16,6 @@ use crate::{
 };
 
 mod average;
-mod difference;
 mod maximum;
 mod mean;
 mod median;
@@ -26,7 +25,6 @@ mod sum;
 mod system;
 
 pub use average::*;
-pub(crate) use difference::*;
 pub use maximum::*;
 pub use mean::*;
 pub use median::*;

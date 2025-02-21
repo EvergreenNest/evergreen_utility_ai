@@ -1,21 +1,26 @@
 //! Provides the [`Flow`] type for defining a collection of [`Aggregator`] and
 //! [`Evaluator`] nodes and running them in topological order.
 
-use std::{borrow::Cow, collections::HashMap, hash::Hash};
+use std::hash::Hash;
 
 use bevy_ecs::{entity::Entity, system::Resource, world::World};
-use petgraph::{algo::toposort, prelude::DiGraphMap, Direction};
+use bevy_utils::HashMap;
+use parking_lot::Mutex;
+use petgraph::{algo::toposort, prelude::DiGraphMap};
 use smallvec::SmallVec;
 use thiserror::Error;
 use tracing::warn;
-use variadics_please::all_tuples_with_size;
 
 use crate::{
-    aggregator::{Aggregation, AggregationCtx, Aggregator, DifferenceAggregator, IntoAggregator},
-    evaluator::{Evaluation, EvaluationCtx, Evaluator, IntoEvaluator},
+    aggregator::{Aggregation, AggregationCtx, Aggregator},
+    evaluator::{Evaluation, EvaluationCtx, Evaluator},
     label::{FlowLabel, InternedFlowLabel, InternedScoreLabel, ScoreLabel},
     score::Score,
 };
+
+mod config;
+
+pub use config::*;
 
 /// [`Resource`] that stores [`Flow`]s mapped to [`FlowLabel`]s, excluding the
 /// current running [`Flow`].
@@ -114,8 +119,8 @@ impl Flow {
         let label = label.intern();
         if let Some(&nid) = self.graph.labels.get(&label) {
             let (kind, name) = match nid {
-                NodeId::Evaluator(e) => ("evaluator", self.graph.evaluators[e].name()),
-                NodeId::Aggregator(a) => ("aggregator", self.graph.aggregators[a].name()),
+                NodeId::Evaluator(e) => ("evaluator", self.graph.evaluators[e].lock().name()),
+                NodeId::Aggregator(a) => ("aggregator", self.graph.aggregators[a].lock().name()),
             };
             tracing::error!(
                 "Label {label:?} is already associated with {kind} {name} in the {:?} flow. It was not overwritten.",
@@ -140,7 +145,7 @@ impl Flow {
     ///
     /// If the flow was not initialized before running.
     pub fn run_readonly(
-        &mut self,
+        &self,
         world: &World,
         target: Entity,
     ) -> HashMap<InternedScoreLabel, Score> {
@@ -159,7 +164,7 @@ impl Flow {
         for &node in &self.graph.dependency_toposort {
             let score = match node {
                 NodeId::Evaluator(eval_idx) => {
-                    let evaluator = &mut self.graph.evaluators[eval_idx];
+                    let mut evaluator = self.graph.evaluators[eval_idx].lock();
 
                     evaluator.evaluate(EvaluationCtx {
                         world,
@@ -167,11 +172,10 @@ impl Flow {
                     })
                 }
                 NodeId::Aggregator(aggr_idx) => {
-                    let aggregator = &mut self.graph.aggregators[aggr_idx];
-
                     let scores = aggregator_child_scores
                         .remove(&node)
                         .expect("aggregator node was not scored before its children");
+                    let mut aggregator = self.graph.aggregators[aggr_idx].lock();
 
                     aggregator.aggregate(AggregationCtx {
                         world,
@@ -184,11 +188,7 @@ impl Flow {
                 labeled_scores.insert(*label, score);
             }
 
-            let parent = self
-                .graph
-                .dependency
-                .neighbors_directed(node, Direction::Outgoing)
-                .next();
+            let parent = self.graph.dependency.neighbors(node).next();
 
             if let Some(parent) = parent {
                 aggregator_child_scores
@@ -212,10 +212,10 @@ impl Flow {
 pub struct FlowGraph {
     /// All evaluator nodes in the [`Flow`]. Any [`NodeId::Evaluator`] value
     /// must be an index into this [`Vec`].
-    evaluators: Vec<Box<dyn Evaluator>>,
+    evaluators: Vec<Mutex<Box<dyn Evaluator>>>,
     /// All aggregator nodes in the [`Flow`]. Any [`NodeId::Aggregator`] value
     /// must be an index into this [`Vec`].
-    aggregators: Vec<Box<dyn Aggregator>>,
+    aggregators: Vec<Mutex<Box<dyn Aggregator>>>,
     /// [`Evaluator`]s/[`Aggregator`]s that have not been initialized yet.
     uninitialized: Vec<NodeId>,
     /// All labeled nodes in the [`Flow`].
@@ -233,8 +233,8 @@ impl FlowGraph {
     pub fn initialize(&mut self, world: &mut World) {
         for id in self.uninitialized.drain(..) {
             match id {
-                NodeId::Evaluator(i) => self.evaluators[i].initialize(world),
-                NodeId::Aggregator(i) => self.aggregators[i].initialize(world),
+                NodeId::Evaluator(i) => self.evaluators[i].lock().initialize(world),
+                NodeId::Aggregator(i) => self.aggregators[i].lock().initialize(world),
             }
         }
     }
@@ -252,13 +252,13 @@ impl FlowGraph {
                 children,
             } => {
                 let node = NodeId::Aggregator(self.aggregators.len());
-                self.aggregators.push(aggregator);
+                self.aggregators.push(Mutex::new(aggregator));
                 self.uninitialized.push(node);
                 (node, Some(children))
             }
             FlowNode::Evaluator { evaluator } => {
                 let node = NodeId::Evaluator(self.evaluators.len());
-                self.evaluators.push(evaluator);
+                self.evaluators.push(Mutex::new(evaluator));
                 self.uninitialized.push(node);
                 (node, None)
             }
@@ -284,169 +284,6 @@ enum NodeId {
     /// Index into [`FlowGraph::aggregators`].
     Aggregator(usize),
 }
-
-/// Configuration for a flow node.
-pub struct FlowNodeConfig {
-    /// The node to register.
-    node: FlowNode,
-    /// The [`ScoreLabel`] to associate with this node, if any.
-    label: Option<InternedScoreLabel>,
-}
-
-impl FlowNodeConfig {
-    /// Constructs a new config with the given [`Aggregator`] and children.
-    pub fn aggregator<MC, MN>(
-        aggregator: impl IntoAggregator<MC>,
-        children: impl IntoFlowNodeConfigs<MN>,
-    ) -> Self {
-        Self {
-            node: FlowNode::Aggregator {
-                aggregator: Box::new(aggregator.into_aggregator()),
-                children: children.into_configs(),
-            },
-            label: None,
-        }
-    }
-
-    /// Constructs a new config with the given [`Evaluator`].
-    pub fn evaluator<M>(evaluator: impl IntoEvaluator<M>) -> Self {
-        Self {
-            node: FlowNode::Evaluator {
-                evaluator: Box::new(evaluator.into_evaluator()),
-            },
-            label: None,
-        }
-    }
-
-    /// Labels this aggregator or evaluator with the given [`ScoreLabel`].
-    pub fn label(mut self, label: impl ScoreLabel) -> Self {
-        self.label = Some(label.intern());
-        self
-    }
-}
-
-enum FlowNode {
-    /// An aggregator node and its children aggregator and/or evaluator nodes.
-    Aggregator {
-        /// The [`Aggregator`] to register.
-        aggregator: Box<dyn Aggregator>,
-        /// The children [`Aggregator`]s and/or [`Evaluator`]s to register for
-        /// this aggregator.
-        children: FlowNodeConfigs,
-    },
-    /// An evaluator node.
-    Evaluator {
-        /// The [`Evaluator`] to register.
-        evaluator: Box<dyn Evaluator>,
-    },
-}
-
-impl FlowNode {
-    /// Returns the kind of the [`FlowNode`].
-    pub fn kind(&self) -> &'static str {
-        match self {
-            FlowNode::Aggregator { .. } => "Aggregator",
-            FlowNode::Evaluator { .. } => "Evaluator",
-        }
-    }
-
-    /// Returns the name of the [`FlowNode`].
-    pub fn name(&self) -> Cow<'static, str> {
-        match self {
-            FlowNode::Aggregator { aggregator, .. } => aggregator.name(),
-            FlowNode::Evaluator { evaluator } => evaluator.name(),
-        }
-    }
-}
-
-/// Trait for types that can be converted into a [`FlowNodeConfig`].
-pub trait IntoFlowNodeConfig<Marker> {
-    /// Converts this value into a [`FlowNodeConfig`].
-    fn into_config(self) -> FlowNodeConfig;
-
-    /// Returns a [`FlowNodeConfig`] for an [`Aggregator`] that computes the
-    /// difference of this value and the other.
-    fn difference<M>(self, other: impl IntoFlowNodeConfig<M>) -> FlowNodeConfig
-    where
-        Self: Sized,
-    {
-        FlowNodeConfig::aggregator(
-            DifferenceAggregator,
-            (self.into_config(), other.into_config()),
-        )
-    }
-}
-
-impl IntoFlowNodeConfig<()> for FlowNodeConfig {
-    fn into_config(self) -> FlowNodeConfig {
-        self
-    }
-}
-
-#[doc(hidden)]
-pub struct EvaluatorConfigMarker;
-
-impl<Marker, P> IntoFlowNodeConfig<(EvaluatorConfigMarker, Marker)> for P
-where
-    P: IntoEvaluator<Marker>,
-{
-    fn into_config(self) -> FlowNodeConfig {
-        FlowNodeConfig::evaluator(self)
-    }
-}
-
-/// A collection of [`FlowNodeConfig`]s.
-pub struct FlowNodeConfigs(Vec<FlowNodeConfig>);
-
-/// Trait for types that can be converted into a [`FlowNodeConfigs`].
-pub trait IntoFlowNodeConfigs<Marker> {
-    /// Converts this value into a [`FlowNodeConfigs`].
-    fn into_configs(self) -> FlowNodeConfigs;
-}
-
-impl IntoFlowNodeConfigs<()> for FlowNodeConfig {
-    fn into_configs(self) -> FlowNodeConfigs {
-        FlowNodeConfigs(vec![self])
-    }
-}
-
-impl IntoFlowNodeConfigs<()> for FlowNodeConfigs {
-    fn into_configs(self) -> FlowNodeConfigs {
-        self
-    }
-}
-
-impl<Marker, P> IntoFlowNodeConfigs<(EvaluatorConfigMarker, Marker)> for P
-where
-    P: IntoEvaluator<Marker>,
-{
-    fn into_configs(self) -> FlowNodeConfigs {
-        FlowNodeConfigs(vec![FlowNodeConfig::evaluator(self)])
-    }
-}
-
-#[doc(hidden)]
-pub struct FlowNodeConfigTupleMarker;
-
-macro_rules! impl_score_system_collection {
-    ($N:expr, $(#[$meta:meta])* $(($param: ident, $sys: ident)),*) => {
-        $(#[$meta])*
-        impl<$($param, $sys),*> IntoFlowNodeConfigs<(FlowNodeConfigTupleMarker, $($param,)*)> for ($($sys,)*)
-        where
-            $($sys: IntoFlowNodeConfigs<$param>),*
-        {
-            fn into_configs(self) -> FlowNodeConfigs {
-                #[allow(non_snake_case, unused_variables)]
-                let ($($sys,)*) = self;
-                let mut configs = Vec::with_capacity($N);
-                $(configs.extend($sys.into_configs().0);)*
-                FlowNodeConfigs(configs)
-            }
-        }
-    };
-}
-
-all_tuples_with_size!(impl_score_system_collection, 1, 20, P, S);
 
 /// [`World`] extension trait for working with [`Flow`]s.
 pub trait WorldFlowExt {
@@ -516,6 +353,9 @@ pub trait WorldFlowExt {
         self.try_flow_scope(label, f)
             .unwrap_or_else(|e| panic!("{e}"))
     }
+
+    /// Returns a reference to the flow with the given label.
+    fn get_flow(&self, label: impl FlowLabel) -> Option<&Flow>;
 }
 
 impl WorldFlowExt for World {
@@ -549,6 +389,11 @@ impl WorldFlowExt for World {
         }
 
         Ok(value)
+    }
+
+    fn get_flow(&self, label: impl FlowLabel) -> Option<&Flow> {
+        self.get_resource::<Flows>()
+            .and_then(|flows| flows.inner.get(&label.intern()))
     }
 }
 
