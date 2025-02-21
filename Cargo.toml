@@ -17,16 +17,16 @@ edition = "2021"
 [dependencies]
 evergreen_utility_ai_macros = { path = "macros" }
 bevy_ecs = { version = "0.15", default-features = false, features = ["bevy_reflect"] }
-bevy_hierarchy = "0.15.2"
-bevy_math = "0.15.2"
-bevy_tasks = "0.15.2"
-bevy_utils = "0.15.2"
-parking_lot = "0.12.3"
-petgraph = "0.7.1"
-smallvec = "1.13.2"
-variadics_please = "1.1.0"
-thiserror = "2.0"
-tracing = "0.1.41"
+bevy_hierarchy = { version = "0.15.2", default-features = false }
+bevy_math = { version = "0.15.2", default-features = false }
+bevy_tasks = { version = "0.15.2", default-features = false }
+bevy_utils = { version = "0.15.2", default-features = false }
+parking_lot = { version = "0.12.3", default-features = false }
+petgraph = { version = "0.7.1", default-features = false, features = ["graphmap"] }
+smallvec = { version = "1.13.2", default-features = false }
+thiserror = { version = "2.0", default-features = false }
+tracing = { version = "0.1.41", default-features = false }
+variadics_please = { version = "1.1.0", default-features = false }
 
 [dev-dependencies]
 bevy = "0.15.2"

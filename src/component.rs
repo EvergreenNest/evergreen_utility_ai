@@ -29,8 +29,6 @@ use crate::{
 pub fn run_all_entity_flows(world: &mut World, entities: &mut QueryState<(Entity, &EntityFlow)>) {
     type ComputedScoresQueue = Vec<(Entity, HashMap<InternedScoreLabel, Score>)>;
 
-    let mut queue = Parallel::<ComputedScoresQueue>::default();
-
     let flows = entities
         .iter(world)
         .map(|(_, flow)| flow.0)
@@ -47,6 +45,8 @@ pub fn run_all_entity_flows(world: &mut World, entities: &mut QueryState<(Entity
     }
 
     drop(flows);
+
+    let mut queue = Parallel::<ComputedScoresQueue>::default();
 
     entities
         .par_iter(world)
