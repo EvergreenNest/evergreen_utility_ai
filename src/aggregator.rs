@@ -64,21 +64,21 @@ pub trait IntoAggregator<Marker> {
     where
         Self: Sized,
     {
-        struct MapAggregator<M, C> {
+        struct MapAggregator<M, A> {
             mapper: M,
-            aggregator: C,
+            aggregator: A,
         }
 
-        impl<M, C> Aggregator for MapAggregator<M, C>
+        impl<M, A> Aggregator for MapAggregator<M, A>
         where
             M: Mapper<Score>,
-            C: Aggregator,
+            A: Aggregator,
         {
             fn name(&self) -> Cow<'static, str> {
                 Cow::Owned(format!(
-                    "map({}, {})",
+                    "{}.map({})",
+                    self.aggregator.name(),
                     self.mapper.name(),
-                    self.aggregator.name()
                 ))
             }
 
@@ -109,16 +109,16 @@ pub trait IntoAggregator<Marker> {
     where
         Self: Sized,
     {
-        struct InvertAggregator<C> {
-            aggregator: C,
+        struct InvertAggregator<A> {
+            aggregator: A,
         }
 
-        impl<C> Aggregator for InvertAggregator<C>
+        impl<A> Aggregator for InvertAggregator<A>
         where
-            C: Aggregator,
+            A: Aggregator,
         {
             fn name(&self) -> Cow<'static, str> {
-                Cow::Owned(format!("invert({})", self.aggregator.name()))
+                Cow::Owned(format!("{}.invert()", self.aggregator.name()))
             }
 
             fn initialize(&mut self, world: &mut World) {
@@ -141,17 +141,17 @@ pub trait IntoAggregator<Marker> {
     where
         Self: Sized,
     {
-        struct WeightAggregator<C: Aggregator> {
+        struct WeightAggregator<A: Aggregator> {
             weight: Score,
-            aggregator: C,
+            aggregator: A,
         }
 
-        impl<C: Aggregator> Aggregator for WeightAggregator<C> {
+        impl<A: Aggregator> Aggregator for WeightAggregator<A> {
             fn name(&self) -> Cow<'static, str> {
                 Cow::Owned(format!(
-                    "weight({}, {})",
-                    self.weight,
+                    "{}.weight({})",
                     self.aggregator.name(),
+                    self.weight,
                 ))
             }
 
@@ -177,19 +177,17 @@ pub trait IntoAggregator<Marker> {
     where
         Self: Sized,
     {
-        struct CurveAggregator<C: Curve<Score> + Send + Sync + 'static, Co: Aggregator> {
+        struct CurveAggregator<C: Curve<Score> + Send + Sync + 'static, A: Aggregator> {
             curve: C,
-            aggregator: Co,
+            aggregator: A,
         }
 
-        impl<C: Curve<Score> + Send + Sync + 'static, Co: Aggregator> Aggregator
-            for CurveAggregator<C, Co>
-        {
+        impl<C: Curve<Score> + Send + Sync + 'static, A: Aggregator> Aggregator for CurveAggregator<C, A> {
             fn name(&self) -> Cow<'static, str> {
                 Cow::Owned(format!(
-                    "curve<{}>({})",
+                    "{}.curve({})",
+                    self.aggregator.name(),
                     std::any::type_name::<C>(),
-                    self.aggregator.name()
                 ))
             }
 
@@ -216,19 +214,19 @@ pub trait IntoAggregator<Marker> {
     where
         Self: Sized,
     {
-        struct CurveInputAggregator<C: Curve<Score> + Send + Sync + 'static, Co: Aggregator> {
+        struct CurveInputAggregator<C: Curve<Score> + Send + Sync + 'static, A: Aggregator> {
             curve: C,
-            aggregator: Co,
+            aggregator: A,
         }
 
-        impl<C: Curve<Score> + Send + Sync + 'static, Co: Aggregator> Aggregator
-            for CurveInputAggregator<C, Co>
+        impl<C: Curve<Score> + Send + Sync + 'static, A: Aggregator> Aggregator
+            for CurveInputAggregator<C, A>
         {
             fn name(&self) -> Cow<'static, str> {
                 Cow::Owned(format!(
-                    "curve_input<{}>({})",
+                    "{}.curve_input({})",
+                    self.aggregator.name(),
                     std::any::type_name::<C>(),
-                    self.aggregator.name()
                 ))
             }
 
@@ -353,17 +351,17 @@ pub trait IntoAggregator<Marker> {
     where
         Self: Sized,
     {
-        struct ChildrenEvaluator<Co: Aggregator, C: Component + Scoreable> {
-            aggregator: Co,
+        struct ChildrenEvaluator<A: Aggregator, C: Component + Scoreable> {
+            aggregator: A,
             _component: PhantomData<C>,
         }
 
-        impl<Co: Aggregator, C: Component + Scoreable> Evaluator for ChildrenEvaluator<Co, C> {
+        impl<A: Aggregator, C: Component + Scoreable> Evaluator for ChildrenEvaluator<A, C> {
             fn name(&self) -> Cow<'static, str> {
                 Cow::Owned(format!(
-                    "children<{}>({})",
+                    "{}.score_children({})",
+                    self.aggregator.name(),
                     std::any::type_name::<C>(),
-                    self.aggregator.name()
                 ))
             }
 
@@ -412,8 +410,8 @@ pub trait IntoAggregator<Marker> {
 }
 
 /// All [`Aggregator`]s can be converted into themselves.
-impl<C: Aggregator> IntoAggregator<()> for C {
-    type Aggregator = C;
+impl<A: Aggregator> IntoAggregator<()> for A {
+    type Aggregator = A;
 
     fn into_aggregator(self) -> Self::Aggregator {
         self

@@ -40,8 +40,8 @@ pub trait IntoSelector<Marker> {
 }
 
 /// All [`Selector`]s can be converted into themselves.
-impl<P: Selector> IntoSelector<()> for P {
-    type Selector = P;
+impl<S: Selector> IntoSelector<()> for S {
+    type Selector = S;
 
     fn into_selector(self) -> Self::Selector {
         self

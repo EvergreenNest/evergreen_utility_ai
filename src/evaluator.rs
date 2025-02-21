@@ -68,9 +68,9 @@ pub trait IntoEvaluator<Marker> {
         {
             fn name(&self) -> Cow<'static, str> {
                 Cow::Owned(format!(
-                    "map({}, {})",
+                    "{}.map({})",
+                    self.evaluator.name(),
                     self.mapper.name(),
-                    self.evaluator.name()
                 ))
             }
 
@@ -101,16 +101,16 @@ pub trait IntoEvaluator<Marker> {
     where
         Self: Sized,
     {
-        struct InvertEvaluator<P> {
-            evaluator: P,
+        struct InvertEvaluator<E> {
+            evaluator: E,
         }
 
-        impl<P> Evaluator for InvertEvaluator<P>
+        impl<E> Evaluator for InvertEvaluator<E>
         where
-            P: Evaluator,
+            E: Evaluator,
         {
             fn name(&self) -> Cow<'static, str> {
-                Cow::Owned(format!("invert({})", self.evaluator.name()))
+                Cow::Owned(format!("{}.invert()", self.evaluator.name()))
             }
 
             fn initialize(&mut self, world: &mut World) {
@@ -133,18 +133,14 @@ pub trait IntoEvaluator<Marker> {
     where
         Self: Sized,
     {
-        struct WeightEvaluator<P: Evaluator> {
-            evaluator: P,
+        struct WeightEvaluator<E: Evaluator> {
             weight: Score,
+            evaluator: E,
         }
 
-        impl<P: Evaluator> Evaluator for WeightEvaluator<P> {
+        impl<E: Evaluator> Evaluator for WeightEvaluator<E> {
             fn name(&self) -> Cow<'static, str> {
-                Cow::Owned(format!(
-                    "weight({}, {})",
-                    self.evaluator.name(),
-                    self.weight
-                ))
+                Cow::Owned(format!("{}.weight({})", self.evaluator.name(), self.weight))
             }
 
             fn initialize(&mut self, world: &mut World) {
@@ -157,8 +153,8 @@ pub trait IntoEvaluator<Marker> {
         }
 
         WeightEvaluator {
-            evaluator: self.into_evaluator(),
             weight: weight.into(),
+            evaluator: self.into_evaluator(),
         }
     }
 
@@ -169,17 +165,17 @@ pub trait IntoEvaluator<Marker> {
     where
         Self: Sized,
     {
-        struct CurveEvaluator<C: Curve<Score> + Send + Sync + 'static, P: Evaluator> {
+        struct CurveEvaluator<C: Curve<Score> + Send + Sync + 'static, E: Evaluator> {
             curve: C,
-            evaluator: P,
+            evaluator: E,
         }
 
-        impl<C: Curve<Score> + Send + Sync + 'static, P: Evaluator> Evaluator for CurveEvaluator<C, P> {
+        impl<C: Curve<Score> + Send + Sync + 'static, E: Evaluator> Evaluator for CurveEvaluator<C, E> {
             fn name(&self) -> Cow<'static, str> {
                 Cow::Owned(format!(
-                    "curve({}, {})",
+                    "{}.curve({})",
+                    self.evaluator.name(),
                     std::any::type_name::<C>(),
-                    self.evaluator.name()
                 ))
             }
 
@@ -250,8 +246,8 @@ pub trait IntoEvaluator<Marker> {
 }
 
 /// All [`Evaluator`]s can be converted into themselves.
-impl<P: Evaluator> IntoEvaluator<()> for P {
-    type Evaluator = P;
+impl<E: Evaluator> IntoEvaluator<()> for E {
+    type Evaluator = E;
 
     fn into_evaluator(self) -> Self::Evaluator {
         self

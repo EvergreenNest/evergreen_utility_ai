@@ -9,8 +9,9 @@ use crate::{
 };
 
 /// Creates a [`Evaluator`] that scores the given [`Component`] on the parent
-/// entity of the target entity. If the target entity does not have a parent,
-/// the evaluator returns [`Score::MIN`].
+/// entity of the target entity. If the target entity does not have a parent, or
+/// if the parent entity does not have the given component, the evaluator
+/// returns [`Score::MIN`].
 pub fn parent<C: Component + Scoreable>() -> impl Evaluator {
     ParentEvaluator(PhantomData::<C>)
 }
