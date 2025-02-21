@@ -5,22 +5,17 @@ use crate::{
     score::Score,
 };
 
-/// Creates an [`Aggregator`] that returns the average score of its children if
-/// it is greater than or equal to the given threshold. If the average score is
-/// less than the threshold, the aggregator returns [`Score::MIN`].
-pub fn average(threshold: impl Into<Score>) -> impl Aggregator {
-    AverageAggregator {
-        threshold: threshold.into(),
-    }
+/// Creates an [`Aggregator`] that returns the average score of its children.
+/// If no child scores are provided, [`Score::MIN`] is returned.
+pub fn average() -> impl Aggregator {
+    AverageAggregator
 }
 
-struct AverageAggregator {
-    threshold: Score,
-}
+struct AverageAggregator;
 
 impl Aggregator for AverageAggregator {
     fn name(&self) -> Cow<'static, str> {
-        Cow::Owned(format!("average({})", self.threshold))
+        Cow::Borrowed("average")
     }
 
     fn aggregate(&mut self, ctx: AggregationCtx) -> Score {
@@ -31,12 +26,6 @@ impl Aggregator for AverageAggregator {
         }
 
         let sum: Score = ctx.aggregation.scores.into_iter().sum();
-        let average = Score::new(sum.get() / len as f32);
-
-        if average < self.threshold {
-            Score::MIN
-        } else {
-            average
-        }
+        Score::new(sum.get() / len as f32)
     }
 }

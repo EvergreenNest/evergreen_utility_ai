@@ -6,30 +6,22 @@ use crate::{
 };
 
 /// Creates an [`Aggregator`] that multiplies the scores of its children.
-/// If the product is less than the given threshold, the aggregator returns
-/// [`Score::MIN`].
-pub fn product(threshold: impl Into<Score>) -> impl Aggregator {
-    ProductAggregator {
-        threshold: threshold.into(),
-    }
+/// If no child scores are provided, [`Score::MIN`] is returned.
+pub fn product() -> impl Aggregator {
+    ProductAggregator
 }
 
-struct ProductAggregator {
-    threshold: Score,
-}
+struct ProductAggregator;
 
 impl Aggregator for ProductAggregator {
     fn name(&self) -> Cow<'static, str> {
-        Cow::Owned(format!("product({})", self.threshold))
+        Cow::Borrowed("product")
     }
 
     fn aggregate(&mut self, ctx: AggregationCtx) -> Score {
-        let product = ctx.aggregation.scores.into_iter().product();
-
-        if product < self.threshold {
-            Score::MIN
-        } else {
-            product
+        if ctx.aggregation.scores.is_empty() {
+            return Score::MIN;
         }
+        ctx.aggregation.scores.into_iter().product()
     }
 }

@@ -258,25 +258,65 @@ pub trait IntoAggregator<Marker> {
         }
     }
 
-    /// Wraps this aggregator into an [`Aggregator`] that only aggregates its
-    /// children if all of their scores are greater than or equal to the given
-    /// threshold. If any of the children's scores are less than the threshold,
-    /// the aggregator returns [`Score::MIN`].
-    fn input_at_least(self, threshold: impl Into<Score>) -> impl Aggregator
+    /// Applies the given threshold to this aggregator's output score. If the
+    /// output score is less than the threshold, the aggregator returns
+    /// [`Score::MIN`].
+    fn threshold(self, threshold: impl Into<Score>) -> impl Aggregator
     where
         Self: Sized,
     {
-        struct InputAtLeastAggregator<C> {
+        struct OutputThresholdAggregator<A> {
             threshold: Score,
-            aggregator: C,
+            aggregator: A,
         }
 
-        impl<C: Aggregator> Aggregator for InputAtLeastAggregator<C> {
+        impl<A: Aggregator> Aggregator for OutputThresholdAggregator<A> {
             fn name(&self) -> Cow<'static, str> {
                 Cow::Owned(format!(
-                    "input_at_least({}, {})",
+                    "{}.threshold({})",
+                    self.aggregator.name(),
                     self.threshold,
-                    self.aggregator.name()
+                ))
+            }
+
+            fn initialize(&mut self, world: &mut World) {
+                self.aggregator.initialize(world);
+            }
+
+            fn aggregate(&mut self, ctx: AggregationCtx) -> Score {
+                let score = self.aggregator.aggregate(ctx);
+                if score < self.threshold {
+                    Score::MIN
+                } else {
+                    score
+                }
+            }
+        }
+
+        OutputThresholdAggregator {
+            threshold: threshold.into(),
+            aggregator: self.into_aggregator(),
+        }
+    }
+
+    /// Applies the given threshold to this aggregator's input scores. If any
+    /// input score is less than the threshold, the aggregator returns
+    /// [`Score::MIN`].
+    fn input_threshold(self, threshold: impl Into<Score>) -> impl Aggregator
+    where
+        Self: Sized,
+    {
+        struct InputThresholdAggregator<A> {
+            threshold: Score,
+            aggregator: A,
+        }
+
+        impl<A: Aggregator> Aggregator for InputThresholdAggregator<A> {
+            fn name(&self) -> Cow<'static, str> {
+                Cow::Owned(format!(
+                    "{}.input_threshold({})",
+                    self.aggregator.name(),
+                    self.threshold,
                 ))
             }
 
@@ -289,16 +329,16 @@ pub trait IntoAggregator<Marker> {
                     .aggregation
                     .scores
                     .iter()
-                    .all(|&score| score >= self.threshold)
+                    .any(|&score| score < self.threshold)
                 {
-                    self.aggregator.aggregate(ctx)
-                } else {
                     Score::MIN
+                } else {
+                    self.aggregator.aggregate(ctx)
                 }
             }
         }
 
-        InputAtLeastAggregator {
+        InputThresholdAggregator {
             threshold: threshold.into(),
             aggregator: self.into_aggregator(),
         }
@@ -425,7 +465,7 @@ mod tests {
         let mut world = World::new();
 
         {
-            let mut aggregator = sum(0.0).input_at_least(0.5);
+            let mut aggregator = sum().input_threshold(0.5);
             aggregator.initialize(&mut world);
 
             let output = aggregator.aggregate(AggregationCtx {
@@ -440,7 +480,7 @@ mod tests {
         }
 
         {
-            let mut aggregator = sum(0.0).input_at_least(0.9);
+            let mut aggregator = sum().input_threshold(0.9);
             aggregator.initialize(&mut world);
 
             let output = aggregator.aggregate(AggregationCtx {
@@ -460,7 +500,7 @@ mod tests {
         let mut world = World::new();
 
         let mut aggregator =
-            sum(0.0).curve(FunctionCurve::new(Score::INTERVAL, |x| Score::new(x * 2.)));
+            sum().curve(FunctionCurve::new(Score::INTERVAL, |x| Score::new(x * 2.)));
         aggregator.initialize(&mut world);
 
         let output = aggregator.aggregate(AggregationCtx {
@@ -479,7 +519,7 @@ mod tests {
         let mut world = World::new();
 
         let mut aggregator =
-            sum(0.0).curve_input(FunctionCurve::new(Score::INTERVAL, |x| Score::new(x * 2.)));
+            sum().curve_input(FunctionCurve::new(Score::INTERVAL, |x| Score::new(x * 2.)));
         aggregator.initialize(&mut world);
 
         let output = aggregator.aggregate(AggregationCtx {
@@ -497,7 +537,7 @@ mod tests {
     fn product_aggregator() {
         let mut world = World::new();
 
-        let mut aggregator = product(0.0);
+        let mut aggregator = product();
         aggregator.initialize(&mut world);
 
         let output = aggregator.aggregate(AggregationCtx {
@@ -515,7 +555,7 @@ mod tests {
     fn sum_aggregator() {
         let mut world = World::new();
 
-        let mut aggregator = sum(0.0);
+        let mut aggregator = sum();
         aggregator.initialize(&mut world);
 
         let output = aggregator.aggregate(AggregationCtx {
@@ -533,7 +573,7 @@ mod tests {
     fn weight_aggregator() {
         let mut world = World::new();
 
-        let mut aggregator = sum(0.0).weight(0.5);
+        let mut aggregator = sum().weight(0.5);
         aggregator.initialize(&mut world);
 
         let output = aggregator.aggregate(AggregationCtx {
@@ -551,7 +591,7 @@ mod tests {
     fn maximum_aggregator() {
         let mut world = World::new();
 
-        let mut aggregator = maximum(0.0);
+        let mut aggregator = maximum();
         aggregator.initialize(&mut world);
 
         let output = aggregator.aggregate(AggregationCtx {

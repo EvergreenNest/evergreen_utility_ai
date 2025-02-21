@@ -66,7 +66,7 @@ fn create_deep_node(depth: usize) -> FlowNodeConfig {
     let mut current = FlowNodeConfig::evaluator(constant(0.5));
 
     for _ in 1..depth {
-        current = FlowNodeConfig::aggregator(sum(0.0).input_at_least(0.5), current);
+        current = FlowNodeConfig::aggregator(sum().input_threshold(0.5), current);
     }
 
     current

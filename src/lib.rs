@@ -125,7 +125,7 @@ mod tests {
 
         world.add_nodes(
             TestFlow,
-            sum(0.0)
+            sum()
                 .with_children((target::<Health>(), constant(0.25)))
                 .label(HealthScore),
         );
@@ -143,12 +143,13 @@ mod tests {
         world.add_nodes(
             TestFlow,
             (
-                sum(0.2)
+                sum()
+                    .threshold(0.2)
                     .curve(FunctionCurve::new(Score::INTERVAL, |x| {
                         Score::new(powf(x, 3.))
                     }))
                     .with_children((
-                        sum(0.2).score_children::<Health>(),
+                        sum().threshold(0.2).score_children::<Health>(),
                         target::<Health>().label(HealthScore),
                     ))
                     .label(TotalHealthScore),

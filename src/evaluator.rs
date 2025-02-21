@@ -199,6 +199,47 @@ pub trait IntoEvaluator<Marker> {
         }
     }
 
+    /// Applies the given threshold to this evaluator's output score. If the
+    /// output score is less than the threshold, the evaluator returns
+    /// [`Score::MIN`].
+    fn threshold(self, threshold: impl Into<Score>) -> impl Evaluator
+    where
+        Self: Sized,
+    {
+        struct OutputThresholdEvaluator<E: Evaluator> {
+            threshold: Score,
+            evaluator: E,
+        }
+
+        impl<E: Evaluator> Evaluator for OutputThresholdEvaluator<E> {
+            fn name(&self) -> Cow<'static, str> {
+                Cow::Owned(format!(
+                    "{}.threshold({})",
+                    self.evaluator.name(),
+                    self.threshold,
+                ))
+            }
+
+            fn initialize(&mut self, world: &mut World) {
+                self.evaluator.initialize(world);
+            }
+
+            fn evaluate(&mut self, ctx: EvaluationCtx) -> Score {
+                let score = self.evaluator.evaluate(ctx);
+                if score < self.threshold {
+                    Score::MIN
+                } else {
+                    score
+                }
+            }
+        }
+
+        OutputThresholdEvaluator {
+            threshold: threshold.into(),
+            evaluator: self.into_evaluator(),
+        }
+    }
+
     /// Labels this evaluator with the given [`ScoreLabel`].
     fn label(self, label: impl ScoreLabel) -> FlowNodeConfig
     where
@@ -283,7 +324,7 @@ mod tests {
         let e3 = world.spawn(TestComponent(20)).id();
         let pent = world.spawn_empty().add_children(&[e1, e2, e3]).id();
 
-        let mut evaluator = sum(0.0).score_children::<TestComponent>();
+        let mut evaluator = sum().score_children::<TestComponent>();
         evaluator.initialize(&mut world);
 
         let output = evaluator.evaluate(EvaluationCtx {
