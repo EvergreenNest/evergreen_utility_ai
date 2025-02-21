@@ -2,6 +2,7 @@
 //!
 //! [`Flow`]: crate::flow::Flow
 
+use alloc::vec::Vec;
 use bevy_ecs::{
     entity::Entity,
     query::QueryState,

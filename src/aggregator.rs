@@ -1,7 +1,8 @@
 //! Provides the [`Aggregator`] trait for aggregating scores from children
 //! entities into a single score.
 
-use std::{borrow::Cow, marker::PhantomData};
+use alloc::{borrow::Cow, boxed::Box, format};
+use core::marker::PhantomData;
 
 use bevy_ecs::{component::Component, entity::Entity, system::SystemInput, world::World};
 use bevy_hierarchy::Children;
@@ -186,7 +187,7 @@ pub trait IntoAggregator<Marker> {
                 Cow::Owned(format!(
                     "{}.curve({})",
                     self.aggregator.name(),
-                    std::any::type_name::<C>(),
+                    core::any::type_name::<C>(),
                 ))
             }
 
@@ -225,7 +226,7 @@ pub trait IntoAggregator<Marker> {
                 Cow::Owned(format!(
                     "{}.curve_input({})",
                     self.aggregator.name(),
-                    std::any::type_name::<C>(),
+                    core::any::type_name::<C>(),
                 ))
             }
 
@@ -360,7 +361,7 @@ pub trait IntoAggregator<Marker> {
                 Cow::Owned(format!(
                     "{}.score_children({})",
                     self.aggregator.name(),
-                    std::any::type_name::<C>(),
+                    core::any::type_name::<C>(),
                 ))
             }
 

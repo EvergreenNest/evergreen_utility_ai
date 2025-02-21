@@ -1,4 +1,4 @@
-use std::borrow::Cow;
+use alloc::{borrow::Cow, boxed::Box, vec, vec::Vec};
 
 use variadics_please::all_tuples_with_size;
 

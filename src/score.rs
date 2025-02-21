@@ -1,7 +1,7 @@
 //! Provides the [`Score`] type for representing a score value in the range `[0, 1]`,
 //! and the [`Scoreable`] trait for converting values into scores.
 
-use std::{
+use core::{
     cmp::Ordering,
     fmt,
     ops::{Add, Div, Mul, Sub},
@@ -175,13 +175,13 @@ impl Div<f32> for Score {
     }
 }
 
-impl std::iter::Sum for Score {
+impl core::iter::Sum for Score {
     fn sum<I: Iterator<Item = Self>>(iter: I) -> Self {
         iter.fold(Self::MIN, Add::add)
     }
 }
 
-impl std::iter::Product for Score {
+impl core::iter::Product for Score {
     fn product<I: Iterator<Item = Self>>(iter: I) -> Self {
         iter.fold(Self::MAX, Mul::mul)
     }

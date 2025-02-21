@@ -1,4 +1,5 @@
-use std::{borrow::Cow, marker::PhantomData};
+use alloc::{borrow::Cow, format};
+use core::marker::PhantomData;
 
 use bevy_ecs::system::Resource;
 
@@ -18,7 +19,7 @@ struct ResourceEvaluator<R: Resource + Scoreable>(PhantomData<R>);
 
 impl<R: Resource + Scoreable> Evaluator for ResourceEvaluator<R> {
     fn name(&self) -> Cow<'static, str> {
-        Cow::Owned(format!("resource({})", std::any::type_name::<R>()))
+        Cow::Owned(format!("resource({})", core::any::type_name::<R>()))
     }
 
     fn evaluate(&mut self, ctx: EvaluationCtx) -> Score {

@@ -1,4 +1,5 @@
-use std::{borrow::Cow, marker::PhantomData};
+use alloc::{borrow::Cow, format};
+use core::marker::PhantomData;
 
 use bevy_ecs::component::Component;
 
@@ -18,7 +19,7 @@ struct TargetEvaluator<C: Component + Scoreable>(PhantomData<C>);
 
 impl<C: Component + Scoreable> Evaluator for TargetEvaluator<C> {
     fn name(&self) -> Cow<'static, str> {
-        Cow::Owned(format!("target({})", std::any::type_name::<C>()))
+        Cow::Owned(format!("target({})", core::any::type_name::<C>()))
     }
 
     fn evaluate(&mut self, ctx: EvaluationCtx) -> Score {

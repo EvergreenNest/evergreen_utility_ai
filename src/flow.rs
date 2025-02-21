@@ -1,8 +1,9 @@
 //! Provides the [`Flow`] type for defining a collection of [`Aggregator`] and
 //! [`Evaluator`] nodes and running them in topological order.
 
-use std::hash::Hash;
+use core::hash::Hash;
 
+use alloc::{boxed::Box, vec::Vec};
 use bevy_ecs::{entity::Entity, system::Resource, world::World};
 use bevy_utils::HashMap;
 use parking_lot::Mutex;

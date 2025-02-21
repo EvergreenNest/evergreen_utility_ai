@@ -1,7 +1,7 @@
 //! Provides components for associating entities with flows, actions, and
 //! storing their computed scores.
 
-use std::sync::Arc;
+use alloc::{sync::Arc, vec::Vec};
 
 use bevy_ecs::{
     batching::BatchingStrategy,

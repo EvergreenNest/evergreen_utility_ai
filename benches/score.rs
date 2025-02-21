@@ -1,4 +1,6 @@
-use std::hint::black_box;
+#![allow(missing_docs)]
+
+use core::hint::black_box;
 
 use bevy::{app::App, MinimalPlugins};
 use bevy_ecs::{

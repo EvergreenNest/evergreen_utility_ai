@@ -1,4 +1,5 @@
-use std::{borrow::Cow, marker::PhantomData};
+use alloc::{borrow::Cow, format};
+use core::marker::PhantomData;
 
 use bevy_ecs::component::Component;
 use bevy_hierarchy::Parent;
@@ -20,7 +21,7 @@ struct ParentEvaluator<C: Component + Scoreable>(PhantomData<C>);
 
 impl<C: Component + Scoreable> Evaluator for ParentEvaluator<C> {
     fn name(&self) -> Cow<'static, str> {
-        Cow::Owned(format!("parent({})", std::any::type_name::<C>()))
+        Cow::Owned(format!("parent({})", core::any::type_name::<C>()))
     }
 
     fn evaluate(&mut self, ctx: EvaluationCtx) -> Score {

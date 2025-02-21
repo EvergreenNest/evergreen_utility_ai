@@ -1,7 +1,7 @@
 //! Provides the [`Evaluator`] trait for evaluating target [`Entity`]s in a
 //! [`World`].
 
-use std::borrow::Cow;
+use alloc::{borrow::Cow, boxed::Box, format};
 
 use bevy_ecs::{entity::Entity, system::SystemInput, world::World};
 use bevy_math::Curve;
@@ -175,7 +175,7 @@ pub trait IntoEvaluator<Marker> {
                 Cow::Owned(format!(
                     "{}.curve({})",
                     self.evaluator.name(),
-                    std::any::type_name::<C>(),
+                    core::any::type_name::<C>(),
                 ))
             }
 

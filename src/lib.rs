@@ -33,7 +33,7 @@
 //! [`System`]: bevy_ecs::system::System
 //! [`ApplyDeferred`]: bevy_ecs::schedule::apply_deferred
 
-#![warn(missing_docs)]
+#![no_std]
 
 pub mod aggregator;
 pub mod command;
@@ -46,6 +46,8 @@ pub mod score;
 pub mod selector;
 
 pub use evergreen_utility_ai_macros as macros;
+
+extern crate alloc;
 
 #[cfg(test)]
 mod tests {

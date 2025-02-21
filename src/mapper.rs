@@ -1,7 +1,7 @@
 //! Provides the [`Mapper`] trait for mapping values to new values based on a
 //! target [`Entity`].
 
-use std::borrow::Cow;
+use alloc::{borrow::Cow, boxed::Box};
 
 use bevy_ecs::{entity::Entity, system::SystemInput, world::World};
 

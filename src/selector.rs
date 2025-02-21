@@ -1,6 +1,6 @@
 //! Provides the [`Selector`] trait for selecting actions based on computed scores.
 
-use std::borrow::Cow;
+use alloc::{borrow::Cow, boxed::Box};
 
 use bevy_ecs::{entity::Entity, system::SystemInput, world::World};
 

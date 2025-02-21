@@ -1,4 +1,4 @@
-use std::borrow::Cow;
+use alloc::{borrow::Cow, format};
 
 use crate::{
     evaluator::{EvaluationCtx, Evaluator},
