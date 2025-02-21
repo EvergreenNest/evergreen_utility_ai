@@ -30,7 +30,7 @@ pub trait Mapper<T>: Send + Sync + 'static {
 const _: Option<Box<dyn Mapper<Score>>> = None;
 
 /// Trait for types that can be converted into a [`Mapper`].
-pub trait IntoMapper<T, Marker> {
+pub trait IntoMapper<T, Marker>: Sized {
     /// The type of [`Mapper`] that this value can be converted into.
     type Mapper: Mapper<T>;
 

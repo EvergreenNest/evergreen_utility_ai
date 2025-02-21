@@ -44,7 +44,7 @@ pub trait Evaluator: Send + Sync + 'static {
 const _: Option<Box<dyn Evaluator>> = None;
 
 /// Trait for types that can be converted into a [`Evaluator`].
-pub trait IntoEvaluator<Marker> {
+pub trait IntoEvaluator<Marker>: Sized {
     /// The type of [`Evaluator`] that this value will be converted into.
     type Evaluator: Evaluator;
 
@@ -52,10 +52,7 @@ pub trait IntoEvaluator<Marker> {
     fn into_evaluator(self) -> Self::Evaluator;
 
     /// Maps the output score of this evaluator using the given [`Mapper`].
-    fn map<M>(self, mapper: impl IntoMapper<Score, M>) -> impl Evaluator
-    where
-        Self: Sized,
-    {
+    fn map<M>(self, mapper: impl IntoMapper<Score, M>) -> impl Evaluator {
         struct MapEvaluator<M, E> {
             mapper: M,
             evaluator: E,
@@ -97,10 +94,7 @@ pub trait IntoEvaluator<Marker> {
     }
 
     /// Inverts the output score of this evaluator.
-    fn invert(self) -> impl Evaluator
-    where
-        Self: Sized,
-    {
+    fn invert(self) -> impl Evaluator {
         struct InvertEvaluator<E> {
             evaluator: E,
         }
@@ -129,10 +123,7 @@ pub trait IntoEvaluator<Marker> {
     }
 
     /// Multiplies the output score of this evaluator by the given weight.
-    fn weight(self, weight: impl Into<Score>) -> impl Evaluator
-    where
-        Self: Sized,
-    {
+    fn weight(self, weight: impl Into<Score>) -> impl Evaluator {
         struct WeightEvaluator<E: Evaluator> {
             weight: Score,
             evaluator: E,
@@ -161,10 +152,7 @@ pub trait IntoEvaluator<Marker> {
     /// Applies the given [`Curve`] to this evaluator's output score. If the
     /// curve cannot be sampled at the output score value, the evaluator returns
     /// [`Score::MIN`].
-    fn curve(self, curve: impl Curve<Score> + Send + Sync + 'static) -> impl Evaluator
-    where
-        Self: Sized,
-    {
+    fn curve(self, curve: impl Curve<Score> + Send + Sync + 'static) -> impl Evaluator {
         struct CurveEvaluator<C: Curve<Score> + Send + Sync + 'static, E: Evaluator> {
             curve: C,
             evaluator: E,
@@ -198,10 +186,7 @@ pub trait IntoEvaluator<Marker> {
     /// Applies the given threshold to this evaluator's output score. If the
     /// output score is less than the threshold, the evaluator returns
     /// [`Score::MIN`].
-    fn threshold(self, threshold: impl Into<Score>) -> impl Evaluator
-    where
-        Self: Sized,
-    {
+    fn threshold(self, threshold: impl Into<Score>) -> impl Evaluator {
         struct OutputThresholdEvaluator<E: Evaluator> {
             threshold: Score,
             evaluator: E,
@@ -237,10 +222,7 @@ pub trait IntoEvaluator<Marker> {
     }
 
     /// Labels this evaluator with the given [`ScoreLabel`].
-    fn label(self, label: impl ScoreLabel) -> FlowNodeConfig
-    where
-        Self: Sized,
-    {
+    fn label(self, label: impl ScoreLabel) -> FlowNodeConfig {
         FlowNodeConfig::evaluator(self).label(label)
     }
 }

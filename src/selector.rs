@@ -31,7 +31,7 @@ pub trait Selector: Send + Sync + 'static {
 const _: Option<Box<dyn Selector>> = None;
 
 /// Trait for types that can be converted into a [`Selector`].
-pub trait IntoSelector<Marker> {
+pub trait IntoSelector<Marker>: Sized {
     /// The type of [`Selector`] that this value will be converted into.
     type Selector: Selector;
 

@@ -51,7 +51,7 @@ pub trait Aggregator: Send + Sync + 'static {
 const _: Option<Box<dyn Aggregator>> = None;
 
 /// Trait for types that can be converted into an [`Aggregator`].
-pub trait IntoAggregator<Marker> {
+pub trait IntoAggregator<Marker>: Sized {
     /// The type of [`Aggregator`] that this value will be converted into.
     type Aggregator: Aggregator;
 
@@ -59,10 +59,7 @@ pub trait IntoAggregator<Marker> {
     fn into_aggregator(self) -> Self::Aggregator;
 
     /// Maps the output score of this aggregator using the given [`Mapper`].
-    fn map<M>(self, mapper: impl IntoMapper<Score, M>) -> impl Aggregator
-    where
-        Self: Sized,
-    {
+    fn map<M>(self, mapper: impl IntoMapper<Score, M>) -> impl Aggregator {
         struct MapAggregator<M, A> {
             mapper: M,
             aggregator: A,
@@ -105,10 +102,7 @@ pub trait IntoAggregator<Marker> {
     }
 
     /// Inverts the output score of this aggregator.
-    fn invert(self) -> impl Aggregator
-    where
-        Self: Sized,
-    {
+    fn invert(self) -> impl Aggregator {
         struct InvertAggregator<A> {
             aggregator: A,
         }
@@ -137,10 +131,7 @@ pub trait IntoAggregator<Marker> {
     }
 
     /// Multiplies the output score of this aggregator by the given weight.
-    fn weight(self, weight: impl Into<Score>) -> impl Aggregator
-    where
-        Self: Sized,
-    {
+    fn weight(self, weight: impl Into<Score>) -> impl Aggregator {
         struct WeightAggregator<A: Aggregator> {
             weight: Score,
             aggregator: A,
@@ -173,10 +164,7 @@ pub trait IntoAggregator<Marker> {
     /// Applies the given [`Curve`] to this aggregator's output score. If the
     /// curve cannot be sampled at the output score value, the aggregator
     /// returns [`Score::MIN`].
-    fn curve(self, curve: impl Curve<Score> + Send + Sync + 'static) -> impl Aggregator
-    where
-        Self: Sized,
-    {
+    fn curve(self, curve: impl Curve<Score> + Send + Sync + 'static) -> impl Aggregator {
         struct CurveAggregator<C: Curve<Score> + Send + Sync + 'static, A: Aggregator> {
             curve: C,
             aggregator: A,
@@ -210,10 +198,7 @@ pub trait IntoAggregator<Marker> {
     /// Applies the given [`Curve`] to this aggregator's input scores. If the
     /// curve cannot be sampled at any input score value, that score is set to
     /// [`Score::MIN`].
-    fn curve_input(self, curve: impl Curve<Score> + Send + Sync + 'static) -> impl Aggregator
-    where
-        Self: Sized,
-    {
+    fn curve_input(self, curve: impl Curve<Score> + Send + Sync + 'static) -> impl Aggregator {
         struct CurveInputAggregator<C: Curve<Score> + Send + Sync + 'static, A: Aggregator> {
             curve: C,
             aggregator: A,
@@ -259,10 +244,7 @@ pub trait IntoAggregator<Marker> {
     /// Applies the given threshold to this aggregator's output score. If the
     /// output score is less than the threshold, the aggregator returns
     /// [`Score::MIN`].
-    fn threshold(self, threshold: impl Into<Score>) -> impl Aggregator
-    where
-        Self: Sized,
-    {
+    fn threshold(self, threshold: impl Into<Score>) -> impl Aggregator {
         struct OutputThresholdAggregator<A> {
             threshold: Score,
             aggregator: A,
@@ -300,10 +282,7 @@ pub trait IntoAggregator<Marker> {
     /// Applies the given threshold to this aggregator's input scores. If any
     /// input score is less than the threshold, the aggregator returns
     /// [`Score::MIN`].
-    fn input_threshold(self, threshold: impl Into<Score>) -> impl Aggregator
-    where
-        Self: Sized,
-    {
+    fn input_threshold(self, threshold: impl Into<Score>) -> impl Aggregator {
         struct InputThresholdAggregator<A> {
             threshold: Score,
             aggregator: A,
@@ -347,10 +326,7 @@ pub trait IntoAggregator<Marker> {
     /// aggregates the scores using this aggregator. If the target entity does
     /// not have any children with the component, the evaluator returns
     /// [`Score::MIN`].
-    fn score_children<C: Component + Scoreable>(self) -> impl Evaluator
-    where
-        Self: Sized,
-    {
+    fn score_children<C: Component + Scoreable>(self) -> impl Evaluator {
         struct ChildrenEvaluator<A: Aggregator, C: Component + Scoreable> {
             aggregator: A,
             _component: PhantomData<C>,
@@ -401,10 +377,7 @@ pub trait IntoAggregator<Marker> {
     }
 
     /// Sets the children of this aggregator to the given [`Aggregator`]s and/or [`Evaluator`]s.
-    fn with_children<M>(self, other: impl IntoFlowNodeConfigs<M>) -> FlowNodeConfig
-    where
-        Self: Sized,
-    {
+    fn with_children<M>(self, other: impl IntoFlowNodeConfigs<M>) -> FlowNodeConfig {
         FlowNodeConfig::aggregator(self, other)
     }
 }
