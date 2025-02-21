@@ -54,7 +54,7 @@ pub(super) enum FlowNode {
     Aggregator {
         /// The [`Aggregator`] to register.
         aggregator: Box<dyn Aggregator>,
-        /// The children [`Aggregator`]s and/or [`Evaluator`]s to register for
+        /// The [`Aggregator`]s and/or [`Evaluator`]s to register as a child to
         /// this aggregator.
         children: FlowNodeConfigs,
     },
