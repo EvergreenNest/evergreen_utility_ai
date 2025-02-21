@@ -13,6 +13,7 @@ bevy_hierarchy = "0.15.2"
 bevy_math = "0.15.2"
 bevy_tasks = "0.15.2"
 bevy_time = { version = "0.15" }
+bevy_utils = "0.15.2"
 parking_lot = "0.12.3"
 petgraph = "0.7.1"
 smallvec = "1.13.2"
@@ -21,6 +22,7 @@ thiserror = "2.0"
 tracing = "0.1.41"
 
 [dev-dependencies]
+bevy = "0.15.2"
 criterion = "0.5.1"
 
 [[bench]]

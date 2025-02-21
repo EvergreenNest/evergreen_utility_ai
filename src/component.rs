@@ -1,16 +1,20 @@
 //! Provides components for associating entities with flows, actions, and
 //! storing their computed scores.
 
-use std::{collections::HashMap, sync::Arc};
+use std::sync::Arc;
 
 use bevy_ecs::{
+    batching::BatchingStrategy,
     component::{Component, ComponentId},
     entity::Entity,
+    query::QueryState,
     world::{DeferredWorld, World},
 };
+use bevy_utils::{HashMap, HashSet, Parallel};
 use parking_lot::Mutex;
 
 use crate::{
+    flow::WorldFlowExt,
     label::{
         ActionLabel, FlowLabel, InternedActionLabel, InternedFlowLabel, InternedScoreLabel,
         ScoreLabel,
@@ -18,6 +22,54 @@ use crate::{
     score::Score,
     selector::{IntoSelector, Selector},
 };
+
+/// [`System`] that runs all entity associated flows in parallel.
+///
+/// [`System`]: bevy_ecs::system::System
+pub fn run_all_entity_flows(world: &mut World, entities: &mut QueryState<(Entity, &EntityFlow)>) {
+    type ComputedScoresQueue = Vec<(Entity, HashMap<InternedScoreLabel, Score>)>;
+
+    let mut queue = Parallel::<ComputedScoresQueue>::default();
+
+    let flows = entities
+        .iter(world)
+        .map(|(_, flow)| flow.0)
+        .collect::<HashSet<_>>();
+
+    // Make sure all of the entity associated flows are initialized so we can
+    // skip initialization in the parallel loop.
+    for &flow in &flows {
+        world
+            .try_flow_scope(flow, |world, flow| {
+                flow.initialize(world);
+            })
+            .ok();
+    }
+
+    drop(flows);
+
+    entities
+        .par_iter(world)
+        .batching_strategy(BatchingStrategy::new().min_batch_size(500))
+        .for_each_init(
+            || queue.borrow_local_mut(),
+            |queue, (entity, label)| {
+                let Some(flow) = world.get_flow(label.0) else {
+                    return;
+                };
+
+                let scores = flow.run_readonly(world, entity);
+                queue.push((entity, scores));
+            },
+        );
+
+    for (entity, scores) in queue.drain() {
+        world
+            .commands()
+            .entity(entity)
+            .insert(ComputedScores(scores));
+    }
+}
 
 /// A [`Component`] that associates an entity with a [`Flow`].
 ///
