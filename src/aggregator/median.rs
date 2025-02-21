@@ -19,7 +19,7 @@ impl Aggregator for MedianAggregator {
     }
 
     fn aggregate(&mut self, ctx: AggregationCtx) -> Score {
-        let mut scores = ctx.aggregation.scores.clone();
+        let mut scores = ctx.aggregation.scores;
         scores.sort_unstable();
 
         let len = scores.len();

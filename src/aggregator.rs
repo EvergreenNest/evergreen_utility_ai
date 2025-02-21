@@ -17,7 +17,6 @@ use crate::{
 
 mod average;
 mod maximum;
-mod mean;
 mod median;
 mod minimum;
 mod product;
@@ -26,7 +25,6 @@ mod system;
 
 pub use average::*;
 pub use maximum::*;
-pub use mean::*;
 pub use median::*;
 pub use minimum::*;
 pub use product::*;
@@ -83,6 +81,7 @@ pub trait IntoAggregator<Marker> {
             }
 
             fn initialize(&mut self, world: &mut World) {
+                self.mapper.initialize(world);
                 self.aggregator.initialize(world);
             }
 
@@ -453,44 +452,29 @@ mod tests {
 
     use crate::{
         aggregator::{
-            maximum, product, sum, Aggregation, AggregationCtx, Aggregator, IntoAggregator,
+            average, geometric_mean, harmonic_mean, maximum, median, minimum, product, sum,
+            Aggregation, AggregationCtx, Aggregator, IntoAggregator,
         },
+        mapper::Mapping,
         score::Score,
     };
 
     #[test]
-    fn all_or_nothing_aggregator() {
+    fn average_aggregator() {
         let mut world = World::new();
 
-        {
-            let mut aggregator = sum().input_threshold(0.5);
-            aggregator.initialize(&mut world);
+        let mut aggregator = average();
+        aggregator.initialize(&mut world);
 
-            let output = aggregator.aggregate(AggregationCtx {
-                world: &world,
-                aggregation: Aggregation {
-                    target: Entity::PLACEHOLDER,
-                    scores: smallvec![0.6.into(), 0.7.into(), 0.8.into()],
-                },
-            });
+        let output = aggregator.aggregate(AggregationCtx {
+            world: &world,
+            aggregation: Aggregation {
+                target: Entity::PLACEHOLDER,
+                scores: smallvec![0.1.into(), 0.2.into(), 0.3.into()],
+            },
+        });
 
-            assert_eq!(output, Score::new(1.0));
-        }
-
-        {
-            let mut aggregator = sum().input_threshold(0.9);
-            aggregator.initialize(&mut world);
-
-            let output = aggregator.aggregate(AggregationCtx {
-                world: &world,
-                aggregation: Aggregation {
-                    target: Entity::PLACEHOLDER,
-                    scores: smallvec![0.6.into(), 0.7.into(), 0.8.into()],
-                },
-            });
-
-            assert_eq!(output, Score::new(0.0));
-        }
+        assert_eq!(output, Score::new(0.2));
     }
 
     #[test]
@@ -509,7 +493,7 @@ mod tests {
             },
         });
 
-        assert_eq!(output, Score::new(0.17));
+        assert_eq!(output, Score::MAX);
     }
 
     #[test]
@@ -529,6 +513,132 @@ mod tests {
         });
 
         assert_eq!(output, Score::new(0.74));
+    }
+
+    #[test]
+    fn invert_aggregator() {
+        let mut world = World::new();
+
+        let mut aggregator = sum().invert();
+        aggregator.initialize(&mut world);
+
+        let output = aggregator.aggregate(AggregationCtx {
+            world: &world,
+            aggregation: Aggregation {
+                target: Entity::PLACEHOLDER,
+                scores: smallvec![0.1.into(), 0.1.into(), 0.1.into()],
+            },
+        });
+
+        assert_eq!(output, Score::new(0.7));
+    }
+
+    #[test]
+    fn map_aggregator() {
+        let mut world = World::new();
+
+        let mut aggregator = sum().map(|mapping: Mapping<Score>| mapping.value * 2.);
+        aggregator.initialize(&mut world);
+
+        let output = aggregator.aggregate(AggregationCtx {
+            world: &world,
+            aggregation: Aggregation {
+                target: Entity::PLACEHOLDER,
+                scores: smallvec![0.1.into(), 0.1.into(), 0.1.into()],
+            },
+        });
+
+        assert_eq!(output, Score::new(0.6));
+    }
+
+    #[test]
+    fn maximum_aggregator() {
+        let mut world = World::new();
+
+        let mut aggregator = maximum();
+        aggregator.initialize(&mut world);
+
+        let output = aggregator.aggregate(AggregationCtx {
+            world: &world,
+            aggregation: Aggregation {
+                target: Entity::PLACEHOLDER,
+                scores: smallvec![0.3.into(), 0.6.into(), 0.8.into()],
+            },
+        });
+
+        assert_eq!(output, Score::new(0.8));
+    }
+
+    #[test]
+    fn geometric_mean_aggregator() {
+        let mut world = World::new();
+
+        let mut aggregator = geometric_mean();
+        aggregator.initialize(&mut world);
+
+        let output = aggregator.aggregate(AggregationCtx {
+            world: &world,
+            aggregation: Aggregation {
+                target: Entity::PLACEHOLDER,
+                scores: smallvec![0.1.into(), 0.2.into(), 0.3.into()],
+            },
+        });
+
+        assert_eq!(output, Score::new(0.18171206));
+    }
+
+    #[test]
+    fn harmonic_mean_aggregator() {
+        let mut world = World::new();
+
+        let mut aggregator = harmonic_mean();
+        aggregator.initialize(&mut world);
+
+        let output = aggregator.aggregate(AggregationCtx {
+            world: &world,
+            aggregation: Aggregation {
+                target: Entity::PLACEHOLDER,
+                scores: smallvec![0.1.into(), 0.2.into(), 0.3.into()],
+            },
+        });
+
+        assert_eq!(output, Score::new(0.16363636));
+    }
+
+    #[test]
+    fn median_aggregator() {
+        let mut world = World::new();
+
+        let mut aggregator = median();
+        aggregator.initialize(&mut world);
+
+        let output = aggregator.aggregate(AggregationCtx {
+            world: &world,
+            aggregation: Aggregation {
+                target: Entity::PLACEHOLDER,
+                scores: smallvec![0.3.into(), 0.15.into(), 0.5.into()],
+            },
+        });
+
+        assert_eq!(output, Score::new(0.3));
+    }
+
+    #[test]
+    fn minimum_aggregator() {
+        let mut world = World::new();
+
+        let mut aggregator = minimum();
+        aggregator.initialize(&mut world);
+
+        let output = aggregator.aggregate(AggregationCtx {
+            world: &world,
+            aggregation: Aggregation {
+                target: Entity::PLACEHOLDER,
+                scores: smallvec![0.3.into(), 0.15.into(), 0.5.into()],
+            },
+        });
+
+        assert_eq!(output, Score::new(0.15));
     }
 
     #[test]
@@ -568,6 +678,81 @@ mod tests {
     }
 
     #[test]
+    fn system_aggregator() {
+        fn my_aggregator(agg: Aggregation) -> Score {
+            agg.scores.into_iter().sum()
+        }
+
+        let mut world = World::new();
+
+        let mut aggregator = my_aggregator.into_aggregator();
+        aggregator.initialize(&mut world);
+
+        let output = aggregator.aggregate(AggregationCtx {
+            world: &world,
+            aggregation: Aggregation {
+                target: Entity::PLACEHOLDER,
+                scores: smallvec![0.1.into(), 0.1.into(), 0.1.into()],
+            },
+        });
+
+        assert_eq!(output, Score::new(0.3));
+    }
+
+    #[test]
+    fn threshold_aggregator() {
+        let mut world = World::new();
+
+        let mut aggregator = product().threshold(0.5);
+        aggregator.initialize(&mut world);
+
+        let output = aggregator.aggregate(AggregationCtx {
+            world: &world,
+            aggregation: Aggregation {
+                target: Entity::PLACEHOLDER,
+                scores: smallvec![0.6.into(), 0.7.into(), 0.8.into()],
+            },
+        });
+
+        assert_eq!(output, Score::MIN);
+    }
+
+    #[test]
+    fn input_threshold_aggregator() {
+        let mut world = World::new();
+
+        {
+            let mut aggregator = sum().input_threshold(0.5);
+            aggregator.initialize(&mut world);
+
+            let output = aggregator.aggregate(AggregationCtx {
+                world: &world,
+                aggregation: Aggregation {
+                    target: Entity::PLACEHOLDER,
+                    scores: smallvec![0.6.into(), 0.7.into(), 0.8.into()],
+                },
+            });
+
+            assert_eq!(output, Score::MAX);
+        }
+
+        {
+            let mut aggregator = sum().input_threshold(0.9);
+            aggregator.initialize(&mut world);
+
+            let output = aggregator.aggregate(AggregationCtx {
+                world: &world,
+                aggregation: Aggregation {
+                    target: Entity::PLACEHOLDER,
+                    scores: smallvec![0.6.into(), 0.7.into(), 0.8.into()],
+                },
+            });
+
+            assert_eq!(output, Score::MIN);
+        }
+    }
+
+    #[test]
     fn weight_aggregator() {
         let mut world = World::new();
 
@@ -583,23 +768,5 @@ mod tests {
         });
 
         assert_eq!(output, Score::new(0.15));
-    }
-
-    #[test]
-    fn maximum_aggregator() {
-        let mut world = World::new();
-
-        let mut aggregator = maximum();
-        aggregator.initialize(&mut world);
-
-        let output = aggregator.aggregate(AggregationCtx {
-            world: &world,
-            aggregation: Aggregation {
-                target: Entity::PLACEHOLDER,
-                scores: smallvec![0.3.into(), 0.6.into(), 0.8.into()],
-            },
-        });
-
-        assert_eq!(output, Score::new(0.8));
     }
 }
