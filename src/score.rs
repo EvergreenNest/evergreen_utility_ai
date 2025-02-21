@@ -30,12 +30,8 @@ impl Score {
         if value.is_nan() {
             panic!("Score value must not be NaN");
         }
-        if value < Self::MIN.get() {
-            Self::MIN
-        } else if value > Self::MAX.get() {
-            Self::MAX
-        } else {
-            Self { value }
+        Self {
+            value: value.clamp(Self::MIN.get(), Self::MAX.get()),
         }
     }
 
@@ -51,13 +47,7 @@ impl Score {
         if value.is_nan() {
             panic!("Score value must not be NaN");
         }
-        if value < Self::MIN.get() {
-            self.value = Self::MIN.get();
-        } else if value > Self::MAX.get() {
-            self.value = Self::MAX.get();
-        } else {
-            self.value = value;
-        }
+        self.value = value.clamp(Self::MIN.get(), Self::MAX.get());
     }
 }
 
