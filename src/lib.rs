@@ -54,7 +54,6 @@ mod tests {
 
     use bevy::time::Time;
     use bevy_ecs::{component::Component, world::World};
-    use bevy_hierarchy::BuildChildren;
     use bevy_math::{curve::FunctionCurve, ops::powf};
 
     use crate::{

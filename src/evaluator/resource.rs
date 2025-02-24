@@ -1,7 +1,7 @@
 use alloc::{borrow::Cow, format};
 use core::marker::PhantomData;
 
-use bevy_ecs::system::Resource;
+use bevy_ecs::resource::Resource;
 
 use crate::{
     evaluator::{EvaluationCtx, Evaluator},

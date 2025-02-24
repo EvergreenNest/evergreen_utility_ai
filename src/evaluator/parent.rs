@@ -1,8 +1,7 @@
 use alloc::{borrow::Cow, format};
 use core::marker::PhantomData;
 
-use bevy_ecs::component::Component;
-use bevy_hierarchy::Parent;
+use bevy_ecs::{component::Component, hierarchy::ChildOf};
 
 use crate::{
     evaluator::{EvaluationCtx, Evaluator},
@@ -25,7 +24,7 @@ impl<C: Component + Scoreable> Evaluator for ParentEvaluator<C> {
     }
 
     fn evaluate(&mut self, ctx: EvaluationCtx) -> Score {
-        let Some(parent) = ctx.world.get::<Parent>(ctx.evaluation.target) else {
+        let Some(parent) = ctx.world.get::<ChildOf>(ctx.evaluation.target) else {
             return Score::MIN;
         };
 

@@ -4,8 +4,9 @@
 use alloc::{borrow::Cow, boxed::Box, format};
 use core::marker::PhantomData;
 
-use bevy_ecs::{component::Component, entity::Entity, system::SystemInput, world::World};
-use bevy_hierarchy::Children;
+use bevy_ecs::{
+    component::Component, entity::Entity, hierarchy::Children, system::SystemInput, world::World,
+};
 use bevy_math::Curve;
 use smallvec::SmallVec;
 

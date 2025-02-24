@@ -5,12 +5,13 @@ use alloc::{sync::Arc, vec::Vec};
 
 use bevy_ecs::{
     batching::BatchingStrategy,
-    component::{Component, ComponentId},
+    component::{require, Component, HookContext},
     entity::Entity,
     query::QueryState,
     world::{DeferredWorld, World},
 };
-use bevy_utils::{HashMap, HashSet, Parallel};
+use bevy_platform_support::collections::{HashMap, HashSet};
+use bevy_utils::Parallel;
 use parking_lot::Mutex;
 
 use crate::{
@@ -100,8 +101,8 @@ impl ActionSelector {
         Self(Arc::new(Mutex::new(selector.into_selector())))
     }
 
-    fn on_insert(mut world: DeferredWorld, entity: Entity, _: ComponentId) {
-        let selector = Arc::clone(&world.get::<ActionSelector>(entity).unwrap().0);
+    fn on_insert(mut world: DeferredWorld, ctx: HookContext) {
+        let selector = Arc::clone(&world.get::<ActionSelector>(ctx.entity).unwrap().0);
         world.commands().queue(move |world: &mut World| {
             selector.lock().initialize(world);
         });
@@ -144,7 +145,7 @@ impl Actions {
     pub fn new(default: impl ActionLabel) -> Self {
         let default = default.intern();
         Self {
-            actions: HashMap::new(),
+            actions: HashMap::default(),
             default,
             current: default,
         }

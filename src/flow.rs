@@ -4,8 +4,8 @@
 use core::hash::Hash;
 
 use alloc::{boxed::Box, vec::Vec};
-use bevy_ecs::{entity::Entity, system::Resource, world::World};
-use bevy_utils::HashMap;
+use bevy_ecs::{entity::Entity, resource::Resource, world::World};
+use bevy_platform_support::{collections::HashMap, hash::FixedHasher};
 use parking_lot::Mutex;
 use petgraph::{algo::toposort, prelude::DiGraphMap};
 use smallvec::SmallVec;
@@ -156,11 +156,14 @@ impl Flow {
             self.label
         );
 
-        let mut labeled_scores = HashMap::with_capacity(self.graph.labels.len());
+        let mut labeled_scores =
+            HashMap::with_capacity_and_hasher(self.graph.labels.len(), FixedHasher);
         // Holds the intermediate child scores for each aggregator node.
-        let mut aggregator_child_scores = HashMap::<NodeId, SmallVec<[Score; 4]>>::with_capacity(
-            self.graph.dependency.node_count(),
-        );
+        let mut aggregator_child_scores =
+            HashMap::<NodeId, SmallVec<[Score; 4]>>::with_capacity_and_hasher(
+                self.graph.dependency.node_count(),
+                FixedHasher,
+            );
 
         for &node in &self.graph.dependency_toposort {
             let score = match node {

@@ -7,7 +7,7 @@ use bevy_ecs::{
     entity::Entity,
     query::QueryState,
     system::{EntityCommand, EntityCommands, Local},
-    world::World,
+    world::{EntityWorldMut, World},
 };
 
 use crate::{
@@ -67,9 +67,10 @@ impl RunFlow {
 }
 
 impl EntityCommand for RunFlow {
-    fn apply(self, entity: Entity, world: &mut World) {
-        if let Err(e) = world.try_run_flow(self.0, entity) {
-            tracing::error!("Failed to run flow for entity {entity}: {e}");
+    fn apply(self, entity: EntityWorldMut) {
+        let id = entity.id();
+        if let Err(e) = entity.into_world_mut().try_run_flow(self.0, id) {
+            tracing::error!("Failed to run flow for entity {id}: {e}");
         }
     }
 }
@@ -78,13 +79,14 @@ impl EntityCommand for RunFlow {
 pub struct RunEntityFlow;
 
 impl EntityCommand for RunEntityFlow {
-    fn apply(self, entity: Entity, world: &mut World) {
-        let Some(flow) = world.get::<EntityFlow>(entity) else {
-            tracing::error!("Entity {entity} does not have an associated flow");
+    fn apply(self, entity: EntityWorldMut) {
+        let Some(&EntityFlow(flow)) = entity.get::<EntityFlow>() else {
+            tracing::error!("Entity {} does not have an associated flow", entity.id());
             return;
         };
-        if let Err(e) = world.try_run_flow(flow.0, entity) {
-            tracing::error!("Failed to run flow for entity {entity}: {e}");
+        let id = entity.id();
+        if let Err(e) = entity.into_world_mut().try_run_flow(flow, id) {
+            tracing::error!("Failed to run flow for entity {id}: {e}");
         }
     }
 }

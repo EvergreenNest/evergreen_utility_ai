@@ -263,8 +263,7 @@ impl SystemInput for Evaluation {
 
 #[cfg(test)]
 mod tests {
-    use bevy_ecs::{component::Component, entity::Entity, system::Resource, world::World};
-    use bevy_hierarchy::BuildChildren;
+    use bevy_ecs::{component::Component, entity::Entity, resource::Resource, world::World};
     use bevy_math::curve::FunctionCurve;
 
     use crate::{
