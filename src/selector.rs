@@ -2,7 +2,7 @@
 
 use alloc::{borrow::Cow, boxed::Box};
 
-use bevy_ecs::{entity::Entity, system::SystemInput, world::World};
+use bevy_ecs::{component::Tick, entity::Entity, system::SystemInput, world::World};
 
 use crate::{
     component::{Actions, ComputedScores},
@@ -25,6 +25,11 @@ pub trait Selector: Send + Sync + 'static {
 
     /// Selects an action label for the given selection context.
     fn select(&mut self, ctx: SelectionCtx) -> Option<InternedActionLabel>;
+
+    /// Checks any [`Tick`]s stored on this selector and wraps their value if they get too old.
+    fn check_change_tick(&mut self, change_tick: Tick) {
+        let _ = change_tick;
+    }
 }
 
 /// Verifies that [`Selector`] is dyn-compatible.

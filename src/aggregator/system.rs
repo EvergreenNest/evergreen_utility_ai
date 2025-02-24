@@ -1,6 +1,7 @@
 use alloc::borrow::Cow;
 
 use bevy_ecs::{
+    component::Tick,
     system::{IntoSystem, ReadOnlySystem},
     world::World,
 };
@@ -29,6 +30,10 @@ where
 
     fn aggregate(&mut self, ctx: AggregationCtx) -> Score {
         self.system.run_readonly(ctx.aggregation, ctx.world)
+    }
+
+    fn check_change_tick(&mut self, change_tick: Tick) {
+        self.system.check_change_tick(change_tick);
     }
 }
 

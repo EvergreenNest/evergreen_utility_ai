@@ -5,7 +5,11 @@ use alloc::{borrow::Cow, boxed::Box, format};
 use core::marker::PhantomData;
 
 use bevy_ecs::{
-    component::Component, entity::Entity, hierarchy::Children, system::SystemInput, world::World,
+    component::{Component, Tick},
+    entity::Entity,
+    hierarchy::Children,
+    system::SystemInput,
+    world::World,
 };
 use bevy_math::Curve;
 use smallvec::SmallVec;
@@ -46,6 +50,11 @@ pub trait Aggregator: Send + Sync + 'static {
 
     /// Aggregates the children scores of the target entity.
     fn aggregate(&mut self, ctx: AggregationCtx) -> Score;
+
+    /// Checks any [`Tick`]s stored on this aggregator and wraps their value if they get too old.
+    fn check_change_tick(&mut self, change_tick: Tick) {
+        let _ = change_tick;
+    }
 }
 
 /// Verifies that [`Aggregator`] is dyn-compatible.
@@ -94,6 +103,11 @@ pub trait IntoAggregator<Marker>: Sized {
                     mapping: Mapping { target, value },
                 })
             }
+
+            fn check_change_tick(&mut self, change_tick: Tick) {
+                self.mapper.check_change_tick(change_tick);
+                self.aggregator.check_change_tick(change_tick);
+            }
         }
 
         MapAggregator {
@@ -124,6 +138,10 @@ pub trait IntoAggregator<Marker>: Sized {
                 let score = self.aggregator.aggregate(ctx);
                 Score::new(1. - score.get())
             }
+
+            fn check_change_tick(&mut self, change_tick: Tick) {
+                self.aggregator.check_change_tick(change_tick);
+            }
         }
 
         InvertAggregator {
@@ -153,6 +171,10 @@ pub trait IntoAggregator<Marker>: Sized {
 
             fn aggregate(&mut self, ctx: AggregationCtx) -> Score {
                 self.aggregator.aggregate(ctx) * self.weight
+            }
+
+            fn check_change_tick(&mut self, change_tick: Tick) {
+                self.aggregator.check_change_tick(change_tick);
             }
         }
 
@@ -187,6 +209,10 @@ pub trait IntoAggregator<Marker>: Sized {
             fn aggregate(&mut self, ctx: AggregationCtx) -> Score {
                 let score = self.aggregator.aggregate(ctx);
                 self.curve.sample(score.get()).unwrap_or(Score::MIN)
+            }
+
+            fn check_change_tick(&mut self, change_tick: Tick) {
+                self.aggregator.check_change_tick(change_tick);
             }
         }
 
@@ -234,6 +260,10 @@ pub trait IntoAggregator<Marker>: Sized {
                     },
                 })
             }
+
+            fn check_change_tick(&mut self, change_tick: Tick) {
+                self.aggregator.check_change_tick(change_tick);
+            }
         }
 
         CurveInputAggregator {
@@ -271,6 +301,10 @@ pub trait IntoAggregator<Marker>: Sized {
                 } else {
                     score
                 }
+            }
+
+            fn check_change_tick(&mut self, change_tick: Tick) {
+                self.aggregator.check_change_tick(change_tick);
             }
         }
 
@@ -313,6 +347,10 @@ pub trait IntoAggregator<Marker>: Sized {
                 } else {
                     self.aggregator.aggregate(ctx)
                 }
+            }
+
+            fn check_change_tick(&mut self, change_tick: Tick) {
+                self.aggregator.check_change_tick(change_tick);
             }
         }
 
@@ -368,6 +406,10 @@ pub trait IntoAggregator<Marker>: Sized {
                         scores,
                     },
                 })
+            }
+
+            fn check_change_tick(&mut self, change_tick: Tick) {
+                self.aggregator.check_change_tick(change_tick);
             }
         }
 

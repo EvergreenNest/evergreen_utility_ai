@@ -1,6 +1,7 @@
 use alloc::borrow::Cow;
 
 use bevy_ecs::{
+    component::Tick,
     system::{IntoSystem, ReadOnlySystem},
     world::World,
 };
@@ -28,6 +29,10 @@ impl<'s, S: ReadOnlySystem<In = Selection<'s>, Out = Option<InternedActionLabel>
 
     fn select(&mut self, ctx: SelectionCtx) -> Option<InternedActionLabel> {
         self.system.run_readonly(ctx.selection, ctx.world)
+    }
+
+    fn check_change_tick(&mut self, change_tick: Tick) {
+        self.system.check_change_tick(change_tick);
     }
 }
 

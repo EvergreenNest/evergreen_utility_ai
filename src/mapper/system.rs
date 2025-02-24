@@ -1,6 +1,7 @@
 use alloc::borrow::Cow;
 
 use bevy_ecs::{
+    component::Tick,
     system::{IntoSystem, ReadOnlySystem},
     world::World,
 };
@@ -26,6 +27,10 @@ where
 
     fn map(&mut self, ctx: MappingCtx<T>) -> T {
         self.system.run_readonly(ctx.mapping, ctx.world)
+    }
+
+    fn check_change_tick(&mut self, change_tick: Tick) {
+        self.system.check_change_tick(change_tick);
     }
 }
 

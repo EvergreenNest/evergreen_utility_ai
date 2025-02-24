@@ -3,7 +3,7 @@
 
 use alloc::{borrow::Cow, boxed::Box};
 
-use bevy_ecs::{entity::Entity, system::SystemInput, world::World};
+use bevy_ecs::{component::Tick, entity::Entity, system::SystemInput, world::World};
 
 use crate::score::Score;
 
@@ -24,6 +24,11 @@ pub trait Mapper<T>: Send + Sync + 'static {
 
     /// Maps the value using the given context.
     fn map(&mut self, ctx: MappingCtx<T>) -> T;
+
+    /// Checks any [`Tick`]s stored on this mapper and wraps their value if they get too old.
+    fn check_change_tick(&mut self, change_tick: Tick) {
+        let _ = change_tick;
+    }
 }
 
 /// Verifies that [`Mapper`] is dyn-compatible.

@@ -3,7 +3,7 @@
 
 use alloc::{borrow::Cow, boxed::Box, format};
 
-use bevy_ecs::{entity::Entity, system::SystemInput, world::World};
+use bevy_ecs::{component::Tick, entity::Entity, system::SystemInput, world::World};
 use bevy_math::Curve;
 
 use crate::{
@@ -38,6 +38,11 @@ pub trait Evaluator: Send + Sync + 'static {
 
     /// Evaluates the evaluator with the given context.
     fn evaluate(&mut self, ctx: EvaluationCtx) -> Score;
+
+    /// Checks any [`Tick`]s stored on this evaluator and wraps their value if they get too old.
+    fn check_change_tick(&mut self, change_tick: Tick) {
+        let _ = change_tick;
+    }
 }
 
 /// Verifies that [`Evaluator`] is dyn-compatible.
@@ -85,6 +90,11 @@ pub trait IntoEvaluator<Marker>: Sized {
                     mapping: Mapping { target, value },
                 })
             }
+
+            fn check_change_tick(&mut self, change_tick: Tick) {
+                self.mapper.check_change_tick(change_tick);
+                self.evaluator.check_change_tick(change_tick);
+            }
         }
 
         MapEvaluator {
@@ -115,6 +125,10 @@ pub trait IntoEvaluator<Marker>: Sized {
                 let score = self.evaluator.evaluate(ctx);
                 Score::new(1. - score.get())
             }
+
+            fn check_change_tick(&mut self, change_tick: Tick) {
+                self.evaluator.check_change_tick(change_tick);
+            }
         }
 
         InvertEvaluator {
@@ -140,6 +154,10 @@ pub trait IntoEvaluator<Marker>: Sized {
 
             fn evaluate(&mut self, ctx: EvaluationCtx) -> Score {
                 self.evaluator.evaluate(ctx) * self.weight
+            }
+
+            fn check_change_tick(&mut self, change_tick: Tick) {
+                self.evaluator.check_change_tick(change_tick);
             }
         }
 
@@ -174,6 +192,10 @@ pub trait IntoEvaluator<Marker>: Sized {
             fn evaluate(&mut self, ctx: EvaluationCtx) -> Score {
                 let score = self.evaluator.evaluate(ctx);
                 self.curve.sample(score.get()).unwrap_or(Score::MIN)
+            }
+
+            fn check_change_tick(&mut self, change_tick: Tick) {
+                self.evaluator.check_change_tick(change_tick);
             }
         }
 
@@ -212,6 +234,10 @@ pub trait IntoEvaluator<Marker>: Sized {
                 } else {
                     score
                 }
+            }
+
+            fn check_change_tick(&mut self, change_tick: Tick) {
+                self.evaluator.check_change_tick(change_tick);
             }
         }
 

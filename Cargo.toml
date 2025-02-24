@@ -16,11 +16,11 @@ edition = "2021"
 
 [dependencies]
 evergreen_utility_ai_macros = { path = "macros" }
-bevy_ecs = { git = "https://github.com/ItsDoot/bevy.git", rev = "23fcc99", default-features = false }
-bevy_math = { git = "https://github.com/ItsDoot/bevy.git", rev = "23fcc99", default-features = false }
-bevy_platform_support = { git = "https://github.com/ItsDoot/bevy.git", rev = "23fcc99", default-features = false }
-bevy_tasks = { git = "https://github.com/ItsDoot/bevy.git", rev = "23fcc99", default-features = false }
-bevy_utils = { git = "https://github.com/ItsDoot/bevy.git", rev = "23fcc99", default-features = false }
+bevy_ecs = { git = "https://github.com/ItsDoot/bevy.git", rev = "9ac7561", default-features = false }
+bevy_math = { git = "https://github.com/ItsDoot/bevy.git", rev = "9ac7561", default-features = false }
+bevy_platform_support = { git = "https://github.com/ItsDoot/bevy.git", rev = "9ac7561", default-features = false }
+bevy_tasks = { git = "https://github.com/ItsDoot/bevy.git", rev = "9ac7561", default-features = false }
+bevy_utils = { git = "https://github.com/ItsDoot/bevy.git", rev = "9ac7561", default-features = false }
 parking_lot = { version = "0.12.3", default-features = false }
 petgraph = { version = "0.7.1", default-features = false, features = ["graphmap"] }
 smallvec = { version = "1.13.2", default-features = false }
@@ -29,7 +29,7 @@ tracing = { version = "0.1.41", default-features = false }
 variadics_please = { version = "1.1.0", default-features = false }
 
 [dev-dependencies]
-bevy = { git = "https://github.com/ItsDoot/bevy.git", rev = "23fcc99" }
+bevy = { git = "https://github.com/ItsDoot/bevy.git", rev = "9ac7561" }
 criterion = "0.5.1"
 
 [[bench]]
