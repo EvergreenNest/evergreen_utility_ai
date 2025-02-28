@@ -42,6 +42,7 @@ pub mod evaluator;
 pub mod flow;
 pub mod label;
 pub mod mapper;
+pub mod schedule;
 pub mod score;
 pub mod selector;
 
